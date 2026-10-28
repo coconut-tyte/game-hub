@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎮 Game Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <link rel="stylesheet" href="css/themes.css" />
+</head>
+<body>
+
+<!-- PARTICLES BACKGROUND -->
+<canvas id="particles-canvas"></canvas>
+
+<!-- NAVBAR -->
+<nav class="navbar" id="navbar">
+  <div class="nav-brand">
+    <span class="brand-icon">🎮</span>
+    <span class="brand-name">Game Hub</span>
+  </div>
+  <div class="nav-center">
+    <div class="streak-display" id="streak-display" title="Chuỗi thắng hiện tại">
+      <span class="streak-fire">🔥</span>
+      <span class="streak-count" id="streak-count">0</span>
+      <span class="streak-label">Chuỗi thắng</span>
+    </div>
+  </div>
+  <div class="nav-actions">
+    <button class="btn-icon" id="leaderboard-btn" title="Bảng xếp hạng">🏆</button>
+    <button class="btn-icon" id="theme-toggle" title="Đổi giao diện">🌙</button>
+    <button class="btn-icon" id="sound-toggle" title="Âm thanh">🔊</button>
+  </div>
+</nav>
+
+<!-- HERO SECTION -->
+<header class="hero" id="home">
+  <div class="hero-content">
+    <h1 class="hero-title">
+      <span class="title-line1">Chào mừng đến</span>
+      <span class="title-line2">Game Hub</span>
+    </h1>
+    <p class="hero-subtitle">Hơn 8 trò chơi kinh điển – Chơi ngay, không cần cài đặt!</p>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <span class="stat-number" id="stat-games">8</span>
+        <span class="stat-label">Trò chơi</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-number" id="stat-wins">0</span>
+        <span class="stat-label">Lượt thắng</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-number" id="stat-streak">0</span>
+        <span class="stat-label">Chuỗi tốt nhất</span>
+      </div>
+    </div>
+    <a href="#games" class="btn-primary scroll-link">
+      <span>Khám phá ngay</span>
+      <span class="btn-arrow">↓</span>
+    </a>
+  </div>
+  <div class="hero-decoration">
+    <div class="floating-emoji" style="--delay:0s">♟️</div>
+    <div class="floating-emoji" style="--delay:0.5s">🎯</div>
+    <div class="floating-emoji" style="--delay:1s">🐦</div>
+    <div class="floating-emoji" style="--delay:1.5s">👾</div>
+    <div class="floating-emoji" style="--delay:2s">🍄</div>
+    <div class="floating-emoji" style="--delay:2.5s">🃏</div>
+  </div>
+</header>
+
+<!-- GAMES GRID -->
+<section class="games-section" id="games">
+  <div class="section-header">
+    <h2 class="section-title">Chọn Trò Chơi</h2>
+    <p class="section-subtitle">Click vào game để bắt đầu ngay!</p>
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">Tất cả</button>
+      <button class="filter-btn" data-filter="board">Cờ bàn</button>
+      <button class="filter-btn" data-filter="action">Hành động</button>
+      <button class="filter-btn" data-filter="puzzle">Giải đố</button>
+    </div>
+  </div>
+
+  <div class="games-grid" id="games-grid">
+
+    <div class="game-card" data-game="caroo" data-category="board">
+      <div class="card-glow"></div>
+      <div class="card-icon">⬛</div>
+      <div class="card-body">
+        <h3 class="card-title">Caro</h3>
+        <p class="card-desc">Cờ Caro kinh điển – 3 chế độ chơi đỉnh cao</p>
+        <div class="card-tags">
+          <span class="tag">2 người chơi</span>
+          <span class="tag">vs Máy</span>
+          <span class="tag">Online</span>
+        </div>
+        <div class="card-stats">
+          <span>🏆 <span class="win-count" id="wins-caroo">0</span> thắng</span>
+          <span class="card-difficulty easy">Dễ</span>
+        </div>
+      </div>
+      <button class="play-btn">Chơi Ngay ▶</button>
+    </div>
+
+    <div class="game-card" data-game="chess" data-category="board">
+      <div class="card-glow"></div>
+      <div class="card-icon">♟️</div>
+      <div class="card-body">
+        <h3 class="card-title">Cờ Vua</h3>
+        <p class="card-desc">Cờ Vua chuẩn quốc tế – nhiều cấp độ AI</p>
+        <div class="card-tags">
+          <span class="tag">2 người</span>
+          <span class="tag">AI Khó</span>
+        </div>
+        <div class="card-stats">
+          <span>🏆 <span class="win-count" id="wins-chess">0</span> thắng</span>
+          <span class="card-difficulty hard">Khó</span>
+        </div>
+      </div>
+      <button class="play-btn">Chơi Ngay ▶</button>
+    </div>
+
+    <div class="game-card" data-game="xiangqi" data-category="board">
+      <div class="card-glow"></div>
+      <div class="card-icon">🀄</div>
+      <div class="card-body">
+        <h3 class="card-title">Cờ Tướng</h3>
+        <p class="card-desc">Cờ Tướng truyền thống – vs người hoặc AI</p>
+        <div class="card-tags">
+          <span class="tag">2 người</span>
+          <span class="tag">vs AI</span>
+        </div>
+        <div class="card-stats">
+          <span>🏆 <span class="win-count" id="wins-xiangqi">0</span> thắng</span>
+          <span class="card-difficulty hard">Khó</span>
+        </div>
+      </div>
+      <button class="play-btn">Chơi Ngay ▶</button>
+    </div>
+
+    <div class="game-card" data-game="oanquan" data-category="puzzle">
+      <div class="card-glow"></div>
+      <div class="card-icon">🟣</div>
+      <div class="card-body">
+        <h3 class="card-title">Ô Ăn Quan</h3>
+        <p class="card-desc">Trò chơi dân gian Việt Nam – chiến thuật thú vị</p>
+        <div class="card-tags">
+          <span class="tag">2 người</span>
+          <span class="tag">vs AI</span>
+        </div>
+        <div class="card-stats">
+          <span>🏆 <span class="win-count" id="wins-oanquan">0</span> thắng</span>
+          <span class="card-difficulty medium">Trung bình</span>
+        </div>
+      </div>
+      <button class="play-btn">Chơi Ngay ▶</button>
+    </div>
+
+    <div class="game-card" data-game="flappybird" data-category="action">
+      <div class="card-glow"></div>
+      <div class="card-icon">🐦</div>
+      <div class="card-body">
+        <h3 class="card-title">Flappy Bird</h3>
+        <p class="card-desc">Vượt qua chướng ngại vật – phản xạ tốc độ cao</p>
+        <div class="card-tags">
+          <span class="tag">Arcade</span>
+          <span class="tag">High Score</span>
+        </div>
+        <div class="card-stats">
+          <span>🏆 Điểm: <span class="win-count" id="wins-flappybird">0</span></span>
+          <span class="card-difficulty medium">Trung bình</span>
+        </div>
+      </div>
+      <button class="play-btn">Chơi Ngay ▶</button>
+    </div>
+
+    <div class="game-card" data-game="pacman" data-category="action">
+      <div class="card-glow"></div>
+      <div class="card-icon">👾</div>
+      <div class="card-body">
+        <h3 class="card-title">Pac-Man</h3>
+        <p class="card-desc">Ăn tất cả chấm, tránh ma – game arcade huyền thoại</p>
+        <div class="card-tags">
+          <span class="tag">Arcade</span>
+          <span class="tag">Màn chơi</span>
+        </div>
+        <div class="card-stats">
+          <span>🏆 Điểm: <span class="win-count" id="wins-pacman">0</span></span>
+          <span class="card-difficulty medium">Trung bình</span>
+        </div>
+      </div>
+      <button class="play-btn">Chơi Ngay ▶</button>
+    </div>
+
+    <div class="game-card" data-game="mario" data-category="action">
+      <div class="card-glow"></div>
+      <div class="card-icon">🍄</div>
+      <div class="card-body">
+        <h3 class="card-title">Super Mario</h3>
+        <p class="card-desc">Nhảy qua chướng ngại, thu thập xu vàng – phiêu lưu!</p>
+        <div class="card-tags">
+          <span class="tag">Platformer</span>
+          <span class="tag">Nhiều màn</span>
+        </div>
+        <div class="card-stats">
+          <span>🏆 Điểm: <span class="win-count" id="wins-mario">0</span></span>
+          <span class="card-difficulty easy">Dễ</span>
+        </div>
+      </div>
+      <button class="play-btn">Chơi Ngay ▶</button>
+    </div>
+
+    <div class="game-card" data-game="snake" data-category="action">
+      <div class="card-glow"></div>
+      <div class="card-icon">🐍</div>
+      <div class="card-body">
+        <h3 class="card-title">Snake</h3>
+        <p class="card-desc">Con rắn không hồi kết – ăn mồi, tránh đâm mình</p>
+        <div class="card-tags">
+          <span class="tag">Arcade</span>
+          <span class="tag">Tốc độ</span>
+        </div>
+        <div class="card-stats">
+          <span>🏆 Điểm: <span class="win-count" id="wins-snake">0</span></span>
+          <span class="card-difficulty easy">Dễ</span>
+        </div>
+      </div>
+      <button class="play-btn">Chơi Ngay ▶</button>
+    </div>
+
+  </div>
+</section>
+
+<!-- GAME MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="game-modal">
+    <div class="modal-header">
+      <div class="modal-title-wrap">
+        <span class="modal-icon" id="modal-icon">🎮</span>
+        <h2 class="modal-title" id="modal-title">Game</h2>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn" id="modal-restart" title="Chơi lại">🔄</button>
+        <button class="modal-btn" id="modal-fullscreen" title="Toàn màn hình">⛶</button>
+        <button class="modal-btn modal-close" id="modal-close" title="Đóng">✕</button>
+      </div>
+    </div>
+    <div class="modal-mode-bar" id="modal-mode-bar">
+      <!-- Game modes inserted by JS -->
+    </div>
+    <div class="modal-body" id="modal-body">
+      <!-- Game content injected here -->
+    </div>
+    <div class="modal-footer" id="modal-footer">
+      <div class="game-info-bar">
+        <span id="game-score-label">Điểm: <strong id="game-score">0</strong></span>
+        <span id="game-status-label">Trạng thái: <strong id="game-status">Sẵn sàng</strong></span>
+        <span id="game-streak-label">🔥 Chuỗi: <strong id="game-streak">0</strong></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LEADERBOARD MODAL -->
+<div class="modal-overlay" id="lb-overlay">
+  <div class="modal modal-sm" id="lb-modal">
+    <div class="modal-header">
+      <h2 class="modal-title">🏆 Bảng Xếp Hạng</h2>
+      <button class="modal-btn modal-close" id="lb-close">✕</button>
+    </div>
+    <div class="modal-body" id="lb-body">
+      <!-- Leaderboard rows -->
+    </div>
+  </div>
+</div>
+
+<!-- TOAST NOTIFICATION -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- WIN OVERLAY -->
+<div class="win-overlay" id="win-overlay">
+  <div class="win-box">
+    <div class="win-emoji" id="win-emoji">🎉</div>
+    <h2 class="win-title" id="win-title">Bạn Đã Thắng!</h2>
+    <p class="win-streak" id="win-streak-msg"></p>
+    <div class="win-buttons">
+      <button class="btn-primary" id="win-play-again">Chơi lại</button>
+      <button class="btn-secondary" id="win-menu">Menu chính</button>
+    </div>
+  </div>
+  <div class="confetti-container" id="confetti-container"></div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="js/particles.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/streak.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/games/caroo.js"></script>
+<script src="js/games/chess.js"></script>
+<script src="js/games/xiangqi.js"></script>
+<script src="js/games/oanquan.js"></script>
+<script src="js/games/flappybird.js"></script>
+<script src="js/games/pacman.js"></script>
+<script src="js/games/mario.js"></script>
+<script src="js/games/snake.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

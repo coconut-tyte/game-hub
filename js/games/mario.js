@@ -429,6 +429,7 @@
           UIManager.showWin({
             title: 'Hoàn thành Màn!',
             gameId: 'mario',
+            score: score,
             emoji: '🍄',
             onPlayAgain: () => startMode(modeId)
           });
@@ -447,6 +448,8 @@
         UIManager.showLoss({
           title: 'Bạn đã thua!',
           emoji: '😵',
+          gameId: 'mario',
+          score: score,
           onPlayAgain: () => startMode(modeId)
         });
       }, 800);
@@ -822,7 +825,15 @@
     touchLeft = touchRight = touchJump = false;
 
     // Setup canvas
-    const wrapper = document.querySelector('.canvas-wrapper');
+    let wrapper = document.querySelector('.canvas-wrapper');
+    const modalBody = document.getElementById('modal-body') || document.querySelector('.modal-body');
+    if (!wrapper && modalBody) {
+      modalBody.innerHTML = '';
+      wrapper = document.createElement('div');
+      wrapper.className = 'canvas-wrapper';
+      wrapper.style.position = 'relative';
+      modalBody.appendChild(wrapper);
+    }
     if (!wrapper) return;
     wrapper.innerHTML = '';
     canvas = document.createElement('canvas');
@@ -831,6 +842,7 @@
     canvas.style.width  = '100%';
     canvas.style.height = 'auto';
     canvas.style.display = 'block';
+    canvas.style.borderRadius = '12px';
     wrapper.appendChild(canvas);
     ctx = canvas.getContext('2d');
 

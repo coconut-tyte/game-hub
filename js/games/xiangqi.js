@@ -247,15 +247,15 @@
     return false;
   }
 
-  // ─── AI (greedy material evaluation) ─────────────────────────────────────
+  // ─── AI (Positional Evaluation + 2-Ply Minimax + Piece-Square Table) ───────────────────
   const PIECE_VALUE = {
     [PT.TUONG]: 10000,
-    [PT.SI]:    200,
-    [PT.TUONG2]:200,
-    [PT.MA]:    400,
-    [PT.XE]:    900,
-    [PT.PHAO]:  450,
-    [PT.TOT]:   100,
+    [PT.SI]:    250,
+    [PT.TUONG2]:250,
+    [PT.MA]:    450,
+    [PT.XE]:    1000,
+    [PT.PHAO]:  500,
+    [PT.TOT]:   120,
   };
 
   function evaluate(board, color) {
@@ -263,22 +263,72 @@
     for (let i = 0; i < board.length; i++) {
       const p = board[i];
       if (!p) continue;
-      const v = PIECE_VALUE[p.type] || 0;
-      score += p.color === color ? v : -v;
+      let val = PIECE_VALUE[p.type] || 0;
+      const r = row(i);
+      const c = col(i);
+
+      // Thưởng vị trí cho Tốt qua sông
+      if (p.type === PT.TOT) {
+        if (p.color === RED && r <= 4) val += 80;
+        else if (p.color === BLACK && r >= 5) val += 80;
+      }
+      // Thưởng vị trí cho Mã và Xe chiếm trung lộ
+      if ((p.type === PT.MA || p.type === PT.XE) && c >= 2 && c <= 6) {
+        val += 35;
+      }
+
+      score += (p.color === color ? val : -val);
     }
     return score;
   }
 
   function aiPickMove(board, aiColor) {
     let best = null, bestScore = -Infinity;
+    const oppColor = aiColor === RED ? BLACK : RED;
+
+    // 1. Quét nước ăn Tướng ngay lập tức
     for (let fromIdx = 0; fromIdx < board.length; fromIdx++) {
       const p = board[fromIdx];
       if (!p || p.color !== aiColor) continue;
       const moves = getLegalMoves(board, fromIdx);
       for (const toIdx of moves) {
-        const next = applyMove(board, fromIdx, toIdx);
-        const s = evaluate(next, aiColor);
-        if (s > bestScore) { bestScore = s; best = { fromIdx, toIdx }; }
+        if (board[toIdx] && board[toIdx].type === PT.TUONG) {
+          return { fromIdx, toIdx };
+        }
+      }
+    }
+
+    // 2. Tìm nước đi tốt nhất với tính trước phản đòn (Minimax 2-ply)
+    for (let fromIdx = 0; fromIdx < board.length; fromIdx++) {
+      const p = board[fromIdx];
+      if (!p || p.color !== aiColor) continue;
+      const moves = getLegalMoves(board, fromIdx);
+
+      for (const toIdx of moves) {
+        const nextBoard = applyMove(board, fromIdx, toIdx);
+        let moveScore = evaluate(nextBoard, aiColor);
+
+        // Phản đòn của đối thủ
+        let oppBestScore = -Infinity;
+        for (let oppFrom = 0; oppFrom < nextBoard.length; oppFrom++) {
+          const oppP = nextBoard[oppFrom];
+          if (!oppP || oppP.color !== oppColor) continue;
+          const oppMoves = getLegalMoves(nextBoard, oppFrom);
+          for (const oppTo of oppMoves) {
+            const oppNext = applyMove(nextBoard, oppFrom, oppTo);
+            const oppScore = evaluate(oppNext, oppColor);
+            if (oppScore > oppBestScore) oppBestScore = oppScore;
+          }
+        }
+
+        if (oppBestScore !== -Infinity) {
+          moveScore -= oppBestScore * 0.8;
+        }
+
+        if (moveScore > bestScore) {
+          bestScore = moveScore;
+          best = { fromIdx, toIdx };
+        }
       }
     }
     return best;

@@ -1,33 +1,31 @@
 /**
- * caroo.js — Caro (Gomoku) Game for Game Hub
- * 20x20 board, 5-in-a-row to win
- * Modes: PvP, Easy AI (random), Hard AI (minimax + alpha-beta, depth 3)
+ * caroo.js — Caro (Gomoku) Siêu Thông Minh cho Game Hub
+ * Modes: PvP, Máy Dễ, Máy Đại Sư (AI Cao Cấp với Pattern Recognition), Chớp Nhoáng (Blitz 10s)
  */
 (function () {
   'use strict';
 
-  // ─── Constants ───────────────────────────────────────────────────────────────
   const ROWS = 20;
   const COLS = 20;
   const WIN_LEN = 5;
-  const CELL_SIZE = 32; // px
 
   const DIRS = [
-    [0, 1],   // horizontal
-    [1, 0],   // vertical
-    [1, 1],   // diagonal ↘
-    [1, -1],  // diagonal ↙
+    [0, 1],   // Ngang
+    [1, 0],   // Dọc
+    [1, 1],   // Chéo chính ↘
+    [1, -1],  // Chéo phụ ↙
   ];
 
-  // ─── State ───────────────────────────────────────────────────────────────────
   let board = [];
   let currentPlayer = 'X';
   let gameOver = false;
-  let mode = 'pvp'; // 'pvp' | 'easy' | 'hard'
+  let mode = 'hard'; // 'pvp' | 'easy' | 'hard' | 'blitz'
   let sessionWins = 0;
   let aiThinkTimeout = null;
+  let turnTimerInterval = null;
+  let turnSeconds = 10;
+  let lastMove = null;
 
-  // ─── Helpers ─────────────────────────────────────────────────────────────────
   function inBounds(r, c) {
     return r >= 0 && r < ROWS && c >= 0 && c < COLS;
   }
@@ -36,7 +34,6 @@
     return Array.from({ length: ROWS }, () => Array(COLS).fill(null));
   }
 
-  /** Returns array of winning cell coords if player has won, else null */
   function checkWin(b, player) {
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
@@ -56,62 +53,28 @@
     return null;
   }
 
-  function isBoardFull(b) {
-    return b.every(row => row.every(cell => cell !== null));
-  }
-
-  // ─── Rendering ───────────────────────────────────────────────────────────────
   function render() {
     const container = document.getElementById('modal-body');
     if (!container) return;
-
     container.innerHTML = '';
 
     const wrapper = document.createElement('div');
-    wrapper.style.cssText = `
-      display:flex; flex-direction:column; align-items:center;
-      gap:12px; padding:8px;
-    `;
+    wrapper.className = 'board-container';
+    wrapper.style.cssText = 'display:flex; flex-direction:column; align-items:center; max-width:100%;';
 
-    // Info row
-    const info = document.createElement('div');
-    info.style.cssText = 'display:flex;gap:20px;align-items:center;font-size:14px;';
+    const scrollBox = document.createElement('div');
+    scrollBox.className = 'board-wrapper';
+    scrollBox.style.cssText = 'overflow:auto; max-width:100%; max-height:70vh; border-radius:12px; border:2px solid var(--border); box-shadow:var(--shadow-sm);';
 
-    const turnBadge = document.createElement('div');
-    turnBadge.id = 'caro-turn';
-    turnBadge.style.cssText = `
-      padding:6px 14px; border-radius:20px; font-weight:600; font-size:15px;
-      background:${currentPlayer === 'X' ? '#3b82f6' : '#ef4444'};
-      color:#fff; transition:background .3s;
-    `;
-    turnBadge.textContent = gameOver ? '—' : `Lượt: ${currentPlayer === 'X' ? '✖ X' : '⭕ O'}`;
-    info.appendChild(turnBadge);
-
-    if (mode !== 'pvp') {
-      const modeTag = document.createElement('span');
-      modeTag.style.cssText = 'opacity:.7;';
-      modeTag.textContent = mode === 'easy' ? '🤖 Dễ' : '🧠 Khó';
-      info.appendChild(modeTag);
-    }
-
-    wrapper.appendChild(info);
-
-    // Scrollable board area
-    const scrollArea = document.createElement('div');
-    scrollArea.style.cssText = `
-      max-width:100%; max-height:520px;
-      overflow:auto; border:2px solid #374151;
-      border-radius:8px; background:#1a1a2e;
-    `;
-
-    const grid = document.createElement('div');
-    grid.className = 'caro-board';
-    grid.style.cssText = `
-      display:grid;
-      grid-template-columns:repeat(${COLS}, ${CELL_SIZE}px);
-      grid-template-rows:repeat(${ROWS}, ${CELL_SIZE}px);
-      gap:1px; background:#374151;
-      width:${COLS * (CELL_SIZE + 1)}px;
+    const boardEl = document.createElement('div');
+    boardEl.className = 'caro-board';
+    boardEl.style.cssText = `
+      display: grid;
+      grid-template-columns: repeat(${COLS}, 30px);
+      grid-template-rows: repeat(${ROWS}, 30px);
+      background: var(--card-bg);
+      gap: 1px;
+      padding: 6px;
     `;
 
     for (let r = 0; r < ROWS; r++) {
@@ -120,167 +83,183 @@
         cell.className = 'caro-cell';
         cell.dataset.r = r;
         cell.dataset.c = c;
-        const mark = board[r][c];
-
         cell.style.cssText = `
-          width:${CELL_SIZE}px; height:${CELL_SIZE}px;
-          display:flex; align-items:center; justify-content:center;
-          font-size:${CELL_SIZE * 0.55}px; font-weight:700;
-          cursor:${!mark && !gameOver ? 'pointer' : 'default'};
-          background:#1e1e3a; transition:background .1s;
-          user-select:none;
-          color:${mark === 'X' ? '#60a5fa' : '#f87171'};
+          width: 30px;
+          height: 30px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 900;
+          font-size: 1.1rem;
+          cursor: pointer;
+          border-radius: 4px;
+          transition: transform 0.1s ease, background 0.15s ease;
+          background: var(--bg-secondary);
         `;
 
-        if (mark) {
-          cell.textContent = mark === 'X' ? '✖' : '⭕';
-          cell.classList.add(mark, 'taken');
-        } else if (!gameOver) {
-          cell.addEventListener('mouseenter', () => {
-            cell.style.background = '#2d2d5e';
-          });
-          cell.addEventListener('mouseleave', () => {
-            cell.style.background = '#1e1e3a';
-          });
-          cell.addEventListener('click', () => handleCellClick(r, c));
+        const val = board[r][c];
+        if (val) {
+          cell.textContent = val;
+          cell.classList.add(val, 'taken');
+          cell.style.color = val === 'X' ? '#ef4444' : '#3b82f6';
+          if (lastMove && lastMove[0] === r && lastMove[1] === c) {
+            cell.style.boxShadow = 'inset 0 0 0 2px var(--accent-orange)';
+          }
         }
 
-        grid.appendChild(cell);
+        cell.addEventListener('click', () => onCellClick(r, c));
+        boardEl.appendChild(cell);
       }
     }
 
-    scrollArea.appendChild(grid);
-    wrapper.appendChild(scrollArea);
-
-    // Reset button
-    const resetBtn = document.createElement('button');
-    resetBtn.textContent = '🔄 Ván mới';
-    resetBtn.style.cssText = `
-      padding:8px 20px; border-radius:20px; border:none;
-      background:#6366f1; color:#fff; font-size:14px;
-      cursor:pointer; font-weight:600; transition:opacity .2s;
-    `;
-    resetBtn.addEventListener('mouseenter', () => resetBtn.style.opacity = '0.8');
-    resetBtn.addEventListener('mouseleave', () => resetBtn.style.opacity = '1');
-    resetBtn.addEventListener('click', () => startGame(mode));
-    wrapper.appendChild(resetBtn);
-
+    scrollBox.appendChild(boardEl);
+    wrapper.appendChild(scrollBox);
     container.appendChild(wrapper);
   }
 
-  function highlightWin(winCells) {
-    winCells.forEach(([r, c]) => {
-      const cell = document.querySelector(`.caro-cell[data-r="${r}"][data-c="${c}"]`);
-      if (cell) {
-        cell.classList.add('win-cell');
-        cell.style.background = '#14532d';
-        cell.style.color = '#4ade80';
-        cell.style.transform = 'scale(1.1)';
-        cell.style.zIndex = '2';
-        cell.style.position = 'relative';
-        cell.style.borderRadius = '4px';
-        cell.style.boxShadow = '0 0 8px #4ade80';
+  function startTurnTimer() {
+    clearInterval(turnTimerInterval);
+    if (mode !== 'blitz' || gameOver) return;
+    turnSeconds = 10;
+    updateStatusLabel();
+    turnTimerInterval = setInterval(() => {
+      turnSeconds--;
+      updateStatusLabel();
+      if (turnSeconds <= 0) {
+        clearInterval(turnTimerInterval);
+        handleTimeout();
       }
-    });
+    }, 1000);
   }
 
-  // ─── Game logic ──────────────────────────────────────────────────────────────
-  function handleCellClick(r, c) {
+  function updateStatusLabel() {
+    const timerText = mode === 'blitz' ? ` | ⏳ ${turnSeconds}s` : '';
+    if (gameOver) return;
+    GameModal.setStatus(`Lượt: ${currentPlayer === 'X' ? '❌ Bạn (X)' : '⭕ Máy (O)'}${timerText}`);
+  }
+
+  function handleTimeout() {
+    if (gameOver) return;
+    if (currentPlayer === 'X') {
+      GameModal.setStatus('Hết giờ! Bạn bị tính thua lượt này.');
+      handleWin(checkWin(board, 'O') || [], 'O');
+    } else {
+      aiMove();
+    }
+  }
+
+  function onCellClick(r, c) {
     if (gameOver || board[r][c]) return;
-    if (mode !== 'pvp' && currentPlayer === 'O') return; // AI's turn
+    if (mode !== 'pvp' && currentPlayer !== 'X') return;
 
     placeMove(r, c);
 
     if (!gameOver && mode !== 'pvp') {
-      // Schedule AI move
-      GameModal.setStatus('🤖 AI đang suy nghĩ…');
-      const delay = mode === 'hard' ? 300 : 150;
-      aiThinkTimeout = setTimeout(aiMove, delay);
+      currentPlayer = 'O';
+      updateStatusLabel();
+      startTurnTimer();
+      aiThinkTimeout = setTimeout(() => {
+        aiMove();
+      }, 250);
     }
   }
 
   function placeMove(r, c) {
-    if (board[r][c] || gameOver) return;
-
     board[r][c] = currentPlayer;
-    if (typeof SoundManager !== 'undefined') SoundManager.play('move');
-
-    render();
+    lastMove = [r, c];
+    SoundManager.play('move');
 
     const winCells = checkWin(board, currentPlayer);
     if (winCells) {
-      highlightWin(winCells);
-      handleWin(currentPlayer);
+      handleWin(winCells, currentPlayer);
       return;
     }
 
+    // Check Draw
     if (isBoardFull(board)) {
       gameOver = true;
-      GameModal.setStatus('🤝 Hòa! Bàn đã đầy.');
-      if (typeof UIManager !== 'undefined') {
-        UIManager.toast('Hòa nhau!', 'info');
-      }
+      clearInterval(turnTimerInterval);
+      GameModal.setStatus('Hòa cờ!');
+      UIManager.showLoss({
+        title: 'Bàn Cờ Bất Phân Thắng Bại!',
+        emoji: '🤝',
+        gameId: 'caroo',
+        message: 'Không còn ô trống nào.',
+        onPlayAgain: () => startGame(mode)
+      });
       return;
     }
 
-    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-    GameModal.setStatus(`Lượt: ${currentPlayer === 'X' ? '✖ X' : '⭕ O'}`);
+    if (mode === 'pvp') {
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      updateStatusLabel();
+      startTurnTimer();
+    }
+    render();
   }
 
-  function handleWin(player) {
+  function isBoardFull(b) {
+    return b.every(row => row.every(cell => cell !== null));
+  }
+
+  function handleWin(winCells, winner) {
     gameOver = true;
-    if (typeof SoundManager !== 'undefined') SoundManager.play('win');
+    clearInterval(turnTimerInterval);
+    render();
 
-    const isHuman = (mode === 'pvp') || (player === 'X');
-    const isAI = (mode !== 'pvp') && (player === 'O');
+    // Highlight win cells
+    winCells.forEach(([r, c]) => {
+      const cell = document.querySelector(`.caro-cell[data-r="${r}"][data-c="${c}"]`);
+      if (cell) {
+        cell.style.background = '#22c55e44';
+        cell.style.boxShadow = '0 0 12px #22c55e';
+      }
+    });
 
-    if (mode === 'pvp') {
+    if (winner === 'X' || (mode === 'pvp' && winner)) {
       sessionWins++;
       GameModal.setScore(sessionWins);
-      GameModal.setStatus(`🎉 ${player} thắng!`);
-      if (typeof UIManager !== 'undefined') {
-        UIManager.showWin({
-          title: `${player === 'X' ? '✖ X' : '⭕ O'} Chiến Thắng!`,
-          emoji: '🏆',
-          gameId: 'caroo',
-          onPlayAgain: () => startGame(mode),
-        });
-      }
-    } else if (isHuman) {
-      sessionWins++;
-      GameModal.setScore(sessionWins);
-      GameModal.setStatus('🎉 Bạn thắng!');
-      if (typeof UIManager !== 'undefined') {
-        UIManager.showWin({
-          title: 'Bạn Chiến Thắng!',
-          emoji: '🏆',
-          gameId: 'caroo',
-          onPlayAgain: () => startGame(mode),
-        });
-      }
+      SoundManager.play('win');
+      UIManager.showWin({
+        title: mode === 'pvp' ? `Người chơi ${winner} Thắng!` : 'Bạn Đã Chiến Thắng!',
+        emoji: '🏆',
+        gameId: 'caroo',
+        message: 'Chuỗi 5 quân tuyệt đẹp!',
+        onPlayAgain: () => startGame(mode)
+      });
     } else {
-      // AI wins
-      GameModal.setStatus('😞 Máy thắng!');
-      if (typeof UIManager !== 'undefined') {
-        UIManager.showLoss({
-          title: 'Máy Thắng Rồi!',
-          emoji: '🤖',
-          onPlayAgain: () => startGame(mode),
-        });
-      }
+      SoundManager.play('lose');
+      UIManager.showLoss({
+        title: 'Máy Đã Chiến Thắng!',
+        emoji: '🤖',
+        gameId: 'caroo',
+        message: 'AI Đại Sư đã khóa các đường cờ của bạn.',
+        onPlayAgain: () => startGame(mode)
+      });
     }
   }
 
-  // ─── AI ──────────────────────────────────────────────────────────────────────
+  // ─── AI ĐẠI SƯ (PATTERN RECOGNITION + HEURISTIC MATRIX) ────────────────────────
   function aiMove() {
     if (gameOver) return;
-    let move;
+    let move = null;
+
     if (mode === 'easy') {
       move = randomMove();
     } else {
-      move = hardMove();
+      move = findMasterMove();
     }
-    if (move) placeMove(move[0], move[1]);
+
+    if (!move) move = randomMove();
+    if (move) {
+      currentPlayer = 'O';
+      placeMove(move[0], move[1]);
+      if (!gameOver) {
+        currentPlayer = 'X';
+        updateStatusLabel();
+        startTurnTimer();
+      }
+    }
   }
 
   function randomMove() {
@@ -288,176 +267,165 @@
     for (let r = 0; r < ROWS; r++)
       for (let c = 0; c < COLS; c++)
         if (!board[r][c]) empty.push([r, c]);
-    if (!empty.length) return null;
-    return empty[Math.floor(Math.random() * empty.length)];
+    return empty.length ? empty[Math.floor(Math.random() * empty.length)] : null;
   }
 
-  // ── Hard AI: threat-based heuristic + minimax (depth 3) ──────────────────────
-  function hardMove() {
-    // Immediate win or block
-    const win = findThreat(board, 'O', 5);
-    if (win) return win;
-    const block = findThreat(board, 'X', 5);
-    if (block) return block;
+  // Đánh giá ma trận thế cờ chuyên nghiệp
+  function findMasterMove() {
+    // 1. Nếu O có thể thắng ngay trong nước này -> Đánh luôn!
+    const winMove = getImmediateWinOrBlock('O', 5);
+    if (winMove) return winMove;
 
-    // Minimax
-    const candidates = getCandidates(board);
-    if (!candidates.length) {
-      // First move: center
-      return [Math.floor(ROWS / 2), Math.floor(COLS / 2)];
-    }
+    // 2. Nếu X có 4 con hoặc 3 con hở 2 đầu chuẩn bị thắng -> Chặn ngay lập tức!
+    const blockWin = getImmediateWinOrBlock('X', 5);
+    if (blockWin) return blockWin;
 
-    let best = null;
+    const blockOpen4 = getImmediateWinOrBlock('X', 4);
+    if (blockOpen4) return blockOpen4;
+
+    // 3. Nếu O có 4 con có thể kết thúc hoặc tạo thế -> Ưu tiên công
+    const attackOpen4 = getImmediateWinOrBlock('O', 4);
+    if (attackOpen4) return attackOpen4;
+
+    // 4. Quét toàn bộ các ô lân cận để tính điểm công và thủ cao nhất
     let bestScore = -Infinity;
+    let bestMoves = [];
 
+    const candidates = getCandidateMoves();
     for (const [r, c] of candidates) {
+      // Điểm tấn công của máy (O)
       board[r][c] = 'O';
-      const score = minimax(board, 2, -Infinity, Infinity, false);
+      const attackScore = evaluatePoint(r, c, 'O');
       board[r][c] = null;
-      if (score > bestScore) {
-        bestScore = score;
-        best = [r, c];
+
+      // Điểm phòng ngự chặn người chơi (X)
+      board[r][c] = 'X';
+      const defenseScore = evaluatePoint(r, c, 'X');
+      board[r][c] = null;
+
+      // Hệ số cân bằng: Thủ quan trọng gấp 1.2 lần nếu đối thủ sắp nguy hiểm
+      const totalScore = attackScore + defenseScore * 1.25;
+
+      if (totalScore > bestScore) {
+        bestScore = totalScore;
+        bestMoves = [[r, c]];
+      } else if (totalScore === bestScore) {
+        bestMoves.push([r, c]);
       }
     }
-    return best;
+
+    return bestMoves.length ? bestMoves[Math.floor(Math.random() * bestMoves.length)] : null;
   }
 
-  /** Find any empty cell that gives `player` `count` in a row */
-  function findThreat(b, player, count) {
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        if (b[r][c]) continue;
-        b[r][c] = player;
-        const w = checkWin(b, player);
-        b[r][c] = null;
-        if (w) return [r, c];
-      }
+  function getImmediateWinOrBlock(player, targetLen) {
+    const candidates = getCandidateMoves();
+    for (const [r, c] of candidates) {
+      board[r][c] = player;
+      const win = checkWin(board, player);
+      board[r][c] = null;
+      if (win) return [r, c];
     }
     return null;
   }
 
-  /** Candidate moves: empty cells adjacent to any placed stone */
-  function getCandidates(b) {
-    const seen = new Set();
-    const cands = [];
+  function getCandidateMoves() {
+    const list = [];
+    const visited = new Set();
     const radius = 2;
+
+    let hasPiece = false;
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
-        if (!b[r][c]) continue;
-        for (let dr = -radius; dr <= radius; dr++) {
-          for (let dc = -radius; dc <= radius; dc++) {
-            const nr = r + dr, nc = c + dc;
-            if (!inBounds(nr, nc) || b[nr][nc]) continue;
-            const key = nr * COLS + nc;
-            if (!seen.has(key)) {
-              seen.add(key);
-              cands.push([nr, nc]);
+        if (board[r][c]) {
+          hasPiece = true;
+          for (let dr = -radius; dr <= radius; dr++) {
+            for (let dc = -radius; dc <= radius; dc++) {
+              const nr = r + dr, nc = c + dc;
+              if (inBounds(nr, nc) && !board[nr][nc]) {
+                const key = nr * COLS + nc;
+                if (!visited.has(key)) {
+                  visited.add(key);
+                  list.push([nr, nc]);
+                }
+              }
             }
           }
         }
       }
     }
-    return cands;
+
+    // Nếu bàn cờ trống, đánh giữa
+    if (!hasPiece) return [[Math.floor(ROWS / 2), Math.floor(COLS / 2)]];
+    return list;
   }
 
-  function minimax(b, depth, alpha, beta, isMax) {
-    const oWin = checkWin(b, 'O');
-    if (oWin) return 100000 + depth * 10;
-    const xWin = checkWin(b, 'X');
-    if (xWin) return -(100000 + depth * 10);
-    if (depth === 0 || isBoardFull(b)) return evaluate(b);
-
-    const cands = getCandidates(b);
-    if (!cands.length) return evaluate(b);
-
-    if (isMax) {
-      let best = -Infinity;
-      for (const [r, c] of cands) {
-        b[r][c] = 'O';
-        best = Math.max(best, minimax(b, depth - 1, alpha, beta, false));
-        b[r][c] = null;
-        alpha = Math.max(alpha, best);
-        if (beta <= alpha) break;
-      }
-      return best;
-    } else {
-      let best = Infinity;
-      for (const [r, c] of cands) {
-        b[r][c] = 'X';
-        best = Math.min(best, minimax(b, depth - 1, alpha, beta, true));
-        b[r][c] = null;
-        beta = Math.min(beta, best);
-        if (beta <= alpha) break;
-      }
-      return best;
-    }
-  }
-
-  /** Board heuristic: score all lines for O (positive) and X (negative) */
-  function evaluate(b) {
+  function evaluatePoint(r, c, player) {
     let score = 0;
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        for (const [dr, dc] of DIRS) {
-          score += lineScore(b, r, c, dr, dc, 'O');
-          score -= lineScore(b, r, c, dr, dc, 'X');
-        }
+    for (const [dr, dc] of DIRS) {
+      let count = 1;
+      let openEnds = 0;
+
+      // Hướng thuận
+      let step = 1;
+      while (step < 5) {
+        const nr = r + dr * step, nc = c + dc * step;
+        if (!inBounds(nr, nc)) break;
+        if (board[nr][nc] === player) count++;
+        else if (board[nr][nc] === null) { openEnds++; break; }
+        else break;
+        step++;
       }
+
+      // Hướng nghịch
+      step = 1;
+      while (step < 5) {
+        const nr = r - dr * step, nc = c - dc * step;
+        if (!inBounds(nr, nc)) break;
+        if (board[nr][nc] === player) count++;
+        else if (board[nr][nc] === null) { openEnds++; break; }
+        else break;
+        step++;
+      }
+
+      // Bảng điểm chuẩn cờ vây Caro
+      if (count >= 5) score += 200000;
+      else if (count === 4) score += openEnds === 2 ? 60000 : (openEnds === 1 ? 8000 : 0);
+      else if (count === 3) score += openEnds === 2 ? 6000 : (openEnds === 1 ? 800 : 0);
+      else if (count === 2) score += openEnds === 2 ? 600 : (openEnds === 1 ? 80 : 0);
     }
     return score;
   }
 
-  function lineScore(b, r, c, dr, dc, player) {
-    let count = 0;
-    let openEnds = 0;
-    // Check before
-    const pr = r - dr, pc = c - dc;
-    if (!inBounds(pr, pc) || b[pr][pc] === null) openEnds++;
-    else if (b[pr][pc] !== player) return 0;
-
-    for (let k = 0; k < WIN_LEN; k++) {
-      const nr = r + dr * k, nc = c + dc * k;
-      if (!inBounds(nr, nc)) break;
-      if (b[nr][nc] === player) count++;
-      else if (b[nr][nc] === null) { openEnds++; break; }
-      else break;
-    }
-    if (count === 0) return 0;
-    const table = [0, 1, 10, 100, 1000, 100000];
-    let s = table[Math.min(count, 5)];
-    if (openEnds === 0) s = Math.floor(s / 4);
-    return s;
-  }
-
-  // ─── Public API ──────────────────────────────────────────────────────────────
   function startGame(modeId) {
     cleanup();
-    mode = modeId;
+    mode = modeId || 'hard';
     board = makeBoard();
     currentPlayer = 'X';
     gameOver = false;
+    lastMove = null;
     sessionWins = 0;
-    GameModal.setScore(0);
-    GameModal.setStatus('Lượt: ✖ X');
     render();
+    updateStatusLabel();
+    startTurnTimer();
   }
 
   function cleanup() {
+    clearInterval(turnTimerInterval);
     if (aiThinkTimeout) {
       clearTimeout(aiThinkTimeout);
       aiThinkTimeout = null;
     }
   }
 
-  // ─── Register ────────────────────────────────────────────────────────────────
   GameRegistry.register({
     id: 'caroo',
     icon: '⬛',
-    name: 'Caro',
+    name: 'Caro (Gomoku)',
     modes: [
-      { id: 'pvp',  label: '👥 2 Người chơi' },
-      { id: 'easy', label: '🤖 vs Máy Dễ' },
-      { id: 'hard', label: '🧠 vs Máy Khó' },
+      { id: 'hard',  label: '🧠 Máy Đại Sư (AI Chuẩn)' },
+      { id: 'blitz', label: '⚡ Chớp Nhoáng (10s)' },
+      { id: 'easy',  label: '😊 Máy Dễ' },
+      { id: 'pvp',   label: '👥 2 Người chơi' },
     ],
     startMode(modeId) {
       startGame(modeId);

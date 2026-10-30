@@ -39,6 +39,8 @@ const SoundManager = (() => {
     jump:    () => { beep(400, 0.05, 'square', 0.12); setTimeout(() => beep(600, 0.1, 'square', 0.1), 50); },
     eat:     () => beep(700, 0.08, 'sine', 0.12),
     button:  () => beep(392, 0.07, 'square', 0.08),
+    match:   () => { beep(587, 0.09, 'triangle', 0.16); setTimeout(() => beep(880, 0.14, 'sine', 0.16), 60); },
+    coin:    () => { beep(987, 0.07, 'sine', 0.16); setTimeout(() => beep(1318, 0.16, 'sine', 0.18), 50); }
   };
 
   function updateBtn() {

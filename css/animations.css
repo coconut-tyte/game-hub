@@ -9,17 +9,16 @@
 }
 
 .game-card {
-  animation: card-in 0.5s ease both;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform, opacity;
 }
 
-.game-card:nth-child(1) { animation-delay: 0.0s; }
-.game-card:nth-child(2) { animation-delay: 0.07s; }
-.game-card:nth-child(3) { animation-delay: 0.14s; }
-.game-card:nth-child(4) { animation-delay: 0.21s; }
-.game-card:nth-child(5) { animation-delay: 0.28s; }
-.game-card:nth-child(6) { animation-delay: 0.35s; }
-.game-card:nth-child(7) { animation-delay: 0.42s; }
-.game-card:nth-child(8) { animation-delay: 0.49s; }
+.game-card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
 
 /* Shimmer for streak */
 @keyframes shimmer {

@@ -12,6 +12,20 @@
 </head>
 <body>
 
+<!-- LOADING SCREEN -->
+<div id="loading-screen" style="
+  position: fixed; inset: 0; background: var(--bg-primary); z-index: 9999;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  transition: opacity 0.4s ease;
+">
+  <div style="font-size: 4rem; animation: brand-pulse 1.5s infinite;">🎮</div>
+  <h2 style="font-size: 2rem; font-weight: 900; margin: 12px 0 6px; background: var(--gradient-accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Game Hub</h2>
+  <p id="loading-text" style="color: var(--text-secondary); font-size: 0.95rem; font-weight: 700; margin-bottom: 20px;">Đang tải hệ thống game... 0%</p>
+  <div style="width: 260px; height: 8px; background: var(--bg-secondary); border-radius: 999px; overflow: hidden; border: 1px solid var(--border);">
+    <div id="loading-progress-bar" style="width: 0%; height: 100%; background: var(--gradient-accent); transition: width 0.15s ease; border-radius: 999px;"></div>
+  </div>
+</div>
+
 <!-- PARTICLES BACKGROUND -->
 <canvas id="particles-canvas"></canvas>
 
@@ -27,11 +41,20 @@
       <span class="streak-count" id="streak-count">0</span>
       <span class="streak-label">Chuỗi thắng</span>
     </div>
+    <div class="coins-display" id="nav-coins-display" title="Số Xu hiện có">
+      <span class="coin-icon">🪙</span>
+      <span class="user-coins-val">100</span>
+      <span class="coin-label">Xu</span>
+    </div>
   </div>
   <div class="nav-actions">
-    <button class="btn-icon" id="leaderboard-btn" title="Bảng xếp hạng">🏆</button>
+    <button class="btn-icon shop-btn-nav" id="shop-nav-btn" title="Cửa hàng trang trí">🛍️ <span class="nav-btn-text">Shop</span></button>
+    <button class="btn-icon gacha-btn-nav" id="gacha-nav-btn" title="Vòng quay Gacha may mắn">🎰 <span class="nav-btn-text">Gacha</span></button>
+    <button class="btn-icon" id="guide-btn" title="Hướng dẫn người mới">❓</button>
+    <button class="btn-icon" id="leaderboard-btn" title="Bảng xếp hạng & Vinh danh">🏆</button>
     <button class="btn-icon" id="theme-toggle" title="Đổi giao diện">🌙</button>
     <button class="btn-icon" id="sound-toggle" title="Âm thanh">🔊</button>
+    <div id="nav-user-area" style="margin-left: 6px;"></div>
   </div>
 </nav>
 
@@ -45,7 +68,7 @@
     <p class="hero-subtitle">Hơn 8 trò chơi kinh điển – Chơi ngay, không cần cài đặt!</p>
     <div class="hero-stats">
       <div class="stat-item">
-        <span class="stat-number" id="stat-games">8</span>
+        <span class="stat-number" id="stat-games">10</span>
         <span class="stat-label">Trò chơi</span>
       </div>
       <div class="stat-divider"></div>
@@ -74,11 +97,58 @@
   </div>
 </header>
 
+<!-- HALL OF FAME / VINH DANH CAO THỦ -->
+<section class="hall-of-fame-section" id="hall-of-fame">
+  <div class="hof-container">
+    <div class="hof-header">
+      <span class="hof-sparkle">✨</span>
+      <h2 class="hof-title">Bảng Vàng Vinh Danh Top Cao Thủ</h2>
+      <span class="hof-sparkle">✨</span>
+    </div>
+    <p class="hof-subtitle">Tôn vinh những huyền thoại thống trị đấu trường Game Hub</p>
+    <div class="hof-podium" id="hof-podium">
+      <!-- TOP 2 -->
+      <div class="podium-rank rank-2">
+        <div class="podium-crown">🥈</div>
+        <div class="podium-avatar-wrapper frame-fire">
+          <div class="podium-avatar">🐉</div>
+        </div>
+        <div class="podium-name" id="hof-name-2">DragonKnight</div>
+        <div class="podium-title-tag">【Chiến Thần】</div>
+        <div class="podium-score"><span id="hof-score-2">1,250</span> Thắng</div>
+        <div class="podium-pillar pillar-2"><span>#2</span></div>
+      </div>
+      <!-- TOP 1 -->
+      <div class="podium-rank rank-1">
+        <div class="podium-crown">👑</div>
+        <div class="podium-avatar-wrapper frame-gold">
+          <div class="podium-avatar">⚡</div>
+        </div>
+        <div class="podium-name" id="hof-name-1">PikaKing_01</div>
+        <div class="podium-title-tag">【Đại Gia Game Hub】</div>
+        <div class="podium-score"><span id="hof-score-1">2,480</span> Thắng</div>
+        <div class="podium-pillar pillar-1"><span>#1</span></div>
+      </div>
+      <!-- TOP 3 -->
+      <div class="podium-rank rank-3">
+        <div class="podium-crown">🥉</div>
+        <div class="podium-avatar-wrapper frame-neon">
+          <div class="podium-avatar">🦊</div>
+        </div>
+        <div class="podium-name" id="hof-name-3">ShadowFox</div>
+        <div class="podium-title-tag">【Thần Đồng】</div>
+        <div class="podium-score"><span id="hof-score-3">980</span> Thắng</div>
+        <div class="podium-pillar pillar-3"><span>#3</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- GAMES GRID -->
 <section class="games-section" id="games">
   <div class="section-header">
     <h2 class="section-title">Chọn Trò Chơi</h2>
-    <p class="section-subtitle">Click vào game để bắt đầu ngay!</p>
+    <p class="section-subtitle">Click vào game để bắt đầu ngay! Thắng game nhận Xu 🪙 để sắm đồ Shop</p>
     <div class="filter-bar">
       <button class="filter-btn active" data-filter="all">Tất cả</button>
       <button class="filter-btn" data-filter="board">Cờ bàn</button>
@@ -88,6 +158,27 @@
   </div>
 
   <div class="games-grid" id="games-grid">
+
+    <!-- PIKACHU CỔ ĐIỂN -->
+    <div class="game-card hot-game" data-game="pikachu" data-category="puzzle">
+      <div class="card-glow"></div>
+      <div class="card-badge">MỚI & HOT 🔥</div>
+      <div class="card-icon">⚡</div>
+      <div class="card-body">
+        <h3 class="card-title">Pikachu Cổ Điển</h3>
+        <p class="card-desc">Onet Connect 2003 chuẩn cổ điển – Nối Pokemon tối đa 2 góc gập</p>
+        <div class="card-tags">
+          <span class="tag">Cổ Điển 2003</span>
+          <span class="tag">Săn Xu</span>
+          <span class="tag">Xếp Hạng</span>
+        </div>
+        <div class="card-stats">
+          <span>🏆 <span class="win-count" id="wins-pikachu">0</span> thắng</span>
+          <span class="card-difficulty normal">Vừa</span>
+        </div>
+      </div>
+      <button class="play-btn">Chơi Ngay ▶</button>
+    </div>
 
     <div class="game-card" data-game="caroo" data-category="board">
       <div class="card-glow"></div>
@@ -221,14 +312,32 @@
       <div class="card-icon">🐍</div>
       <div class="card-body">
         <h3 class="card-title">Snake</h3>
-        <p class="card-desc">Con rắn không hồi kết – ăn mồi, tránh đâm mình</p>
+        <p class="card-desc">Con rắn không hồi kết – Portal, Hyper tốc độ</p>
         <div class="card-tags">
-          <span class="tag">Arcade</span>
-          <span class="tag">Tốc độ</span>
+          <span class="tag">Portal</span>
+          <span class="tag">Hyper</span>
         </div>
         <div class="card-stats">
           <span>🏆 Điểm: <span class="win-count" id="wins-snake">0</span></span>
           <span class="card-difficulty easy">Dễ</span>
+        </div>
+      </div>
+      <button class="play-btn">Chơi Ngay ▶</button>
+    </div>
+
+    <div class="game-card" data-game="minesweeper" data-category="puzzle">
+      <div class="card-glow"></div>
+      <div class="card-icon">💣</div>
+      <div class="card-body">
+        <h3 class="card-title">Dò Mìn</h3>
+        <p class="card-desc">Gỡ mìn cổ điển – Trí tuệ đỉnh cao, chế độ Thần Tốc</p>
+        <div class="card-tags">
+          <span class="tag">Trí tuệ</span>
+          <span class="tag">Thần Tốc</span>
+        </div>
+        <div class="card-stats">
+          <span>🏆 <span class="win-count" id="wins-minesweeper">0</span> thắng</span>
+          <span class="card-difficulty medium">Vừa</span>
         </div>
       </div>
       <button class="play-btn">Chơi Ngay ▶</button>
@@ -269,13 +378,113 @@
 
 <!-- LEADERBOARD MODAL -->
 <div class="modal-overlay" id="lb-overlay">
-  <div class="modal modal-sm" id="lb-modal">
+  <div class="modal" id="lb-modal" style="max-width:680px; width:95vw; max-height:90vh; display:flex; flex-direction:column;">
     <div class="modal-header">
-      <h2 class="modal-title">🏆 Bảng Xếp Hạng</h2>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:1.4rem;">🏆</span>
+        <h2 class="modal-title" id="lb-modal-title">Bảng Xếp Hạng Game Hub</h2>
+      </div>
       <button class="modal-btn modal-close" id="lb-close">✕</button>
     </div>
-    <div class="modal-body" id="lb-body">
+    <div class="lb-tabs-wrapper" id="lb-tabs-wrapper">
+      <div class="lb-tabs-scroll" id="lb-tabs-scroll">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+    <div class="modal-body" id="lb-body" style="padding:14px; overflow-y:auto; flex:1;">
       <!-- Leaderboard rows -->
+    </div>
+  </div>
+</div>
+
+<!-- AUTH MODAL (ĐĂNG NHẬP / ĐĂNG KÝ BẮT BUỘC) -->
+<div class="modal-overlay" id="auth-modal-overlay">
+  <div class="modal modal-sm" id="auth-modal">
+    <div class="modal-header">
+      <h2 class="modal-title">🔐 Tài Khoản Game Hub</h2>
+      <button class="modal-btn modal-close" id="auth-modal-close">✕</button>
+    </div>
+    <div style="display:flex; border-bottom:1px solid var(--border); background:var(--bg-secondary);">
+      <button id="auth-tab-login" class="mode-btn active" style="flex:1; border:none; border-radius:0; padding:12px; font-weight:800;">Đăng Nhập</button>
+      <button id="auth-tab-register" class="mode-btn" style="flex:1; border:none; border-radius:0; padding:12px; font-weight:800;">Đăng Ký Mới</button>
+    </div>
+    <div class="modal-body" style="padding:24px; display:block;">
+      <div id="auth-error-msg" style="color:#ef4444; font-weight:700; font-size:0.85rem; margin-bottom:12px; min-height:18px;"></div>
+      
+      <!-- Login Form -->
+      <div id="auth-form-login">
+        <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px;">Tên đăng nhập hoặc Email:</label>
+        <input type="text" id="login-username" placeholder="Nhập tên đăng nhập..." style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); margin-bottom:14px; box-sizing:border-box;">
+        
+        <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px;">Mật khẩu:</label>
+        <input type="password" id="login-password" placeholder="Nhập mật khẩu..." style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); margin-bottom:20px; box-sizing:border-box;">
+        
+        <button id="btn-submit-login" class="btn-primary" style="width:100%; justify-content:center; padding:12px;">Đăng Nhập Ngay</button>
+      </div>
+
+      <!-- Register Form -->
+      <div id="auth-form-register" style="display:none;">
+        <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px;">Tên người dùng:</label>
+        <input type="text" id="reg-username" placeholder="Ví dụ: gamer_pro" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); margin-bottom:12px; box-sizing:border-box;">
+        
+        <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px;">Email:</label>
+        <input type="email" id="reg-email" placeholder="email@gmail.com" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); margin-bottom:12px; box-sizing:border-box;">
+
+        <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px;">Mật khẩu (từ 6 ký tự):</label>
+        <input type="password" id="reg-password" placeholder="Tạo mật khẩu an toàn..." style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); margin-bottom:20px; box-sizing:border-box;">
+        
+        <button id="btn-submit-register" class="btn-primary" style="width:100%; justify-content:center; padding:12px;">Tạo Tài Khoản & Bắt Đầu</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TUTORIAL / HƯỚNG DẪN MODAL -->
+<div class="modal-overlay" id="tutorial-modal-overlay">
+  <div class="modal" id="tutorial-modal" style="max-width:700px;">
+    <div class="modal-header">
+      <h2 class="modal-title">📖 Hướng Dẫn Cho Người Mới</h2>
+      <button class="modal-btn modal-close" id="tutorial-close">✕</button>
+    </div>
+    <div class="modal-body" style="padding:24px; display:block; max-height:75vh; overflow-y:auto;">
+      <div style="background:var(--bg-secondary); padding:16px; border-radius:12px; margin-bottom:20px; border-left:4px solid var(--accent);">
+        <h4 style="margin-bottom:6px; font-size:1.1rem; color:var(--accent);">🎮 Chào mừng bạn gia nhập Game Hub!</h4>
+        <p style="font-size:0.9rem; color:var(--text-secondary); line-height:1.6;">
+          Tại đây bạn có thể thưởng thức <strong>9 trò chơi kinh điển</strong> với nhiều lối chơi độc đáo (Portal, Thần tốc, Đảo trọng lực...) cùng hệ thống AI Đại sư thông minh.
+        </p>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
+        <div style="background:var(--card-bg); padding:14px; border-radius:10px; border:1px solid var(--border);">
+          <h4 style="color:var(--text-primary); margin-bottom:6px;">🔥 Chuỗi Thắng (Streak)</h4>
+          <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.5;">
+            Mỗi trận thắng sẽ cộng thêm vào chuỗi thắng liên tiếp trên Navbar. Thua bất kỳ ván nào chuỗi sẽ reset về 0!
+          </p>
+        </div>
+
+        <div style="background:var(--card-bg); padding:14px; border-radius:10px; border:1px solid var(--border);">
+          <h4 style="color:var(--text-primary); margin-bottom:6px;">⌨️ Phím Điều Khiển</h4>
+          <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.5;">
+            - <strong>Snake / Mario / Pacman:</strong> Dùng mũi tên hoặc <strong>W-A-S-D</strong>.<br>
+            - <strong>Flappy Bird:</strong> Phím <strong>Space</strong> hoặc chạm màn hình.<br>
+            - <strong>Điện thoại:</strong> Hỗ trợ vuốt chạm cảm ứng 100%.
+          </p>
+        </div>
+
+        <div style="background:var(--card-bg); padding:14px; border-radius:10px; border:1px solid var(--border);">
+          <h4 style="color:var(--text-primary); margin-bottom:6px;">💣 Dò Mìn & Ô Ăn Quan</h4>
+          <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.5;">
+            Có nút chuyển nhanh giữa <strong>Mở ô</strong> và <strong>Cắm cờ</strong> trên thanh công cụ.
+          </p>
+        </div>
+
+        <div style="background:var(--card-bg); padding:14px; border-radius:10px; border:1px solid var(--border);">
+          <h4 style="color:var(--text-primary); margin-bottom:6px;">☁️ Lưu Trữ Đám Mây</h4>
+          <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.5;">
+            Tài khoản và điểm số của bạn được tự động đồng bộ lên hệ thống Cloud SQL an toàn, chơi trên máy nào cũng giữ nguyên kỷ lục.
+          </p>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -297,11 +506,75 @@
   <div class="confetti-container" id="confetti-container"></div>
 </div>
 
+<!-- SHOP & GACHA MODAL -->
+<div class="shop-modal-overlay" id="shop-modal-overlay">
+  <div class="shop-modal">
+    <div class="shop-modal-header">
+      <div class="shop-modal-title">
+        <span class="shop-title-icon">🛍️</span>
+        <h3>Cửa Hàng Vật Phẩm & Gacha May Mắn</h3>
+      </div>
+      <div class="shop-modal-coins">
+        <span>Số dư: </span>
+        <strong class="user-coins-val">100</strong>
+        <span>🪙</span>
+      </div>
+      <button class="modal-close" id="shop-modal-close" onclick="ShopManager.closeShopModal()">✕</button>
+    </div>
+
+    <div class="shop-nav-tabs">
+      <button class="shop-tab active" id="shop-tab-items" onclick="ShopManager.switchShopTab('shop')">🛒 Vật Phẩm Shop</button>
+      <button class="shop-tab" id="shop-tab-gacha" onclick="ShopManager.switchShopTab('gacha')">🎰 Vòng Quay Gacha (50 Xu)</button>
+      <button class="shop-tab" id="shop-tab-inventory" onclick="ShopManager.switchShopTab('inventory')">🎒 Túi Đồ Của Tôi</button>
+    </div>
+
+    <div class="shop-modal-body">
+      <!-- VIEW 1: CỬA HÀNG -->
+      <div class="shop-grid" id="shop-view-items"></div>
+
+      <!-- VIEW 2: GACHA MAY MẮN -->
+      <div class="gacha-container" id="shop-view-gacha" style="display:none;">
+        <div class="gacha-chest-area">
+          <div class="gacha-chest" id="gacha-chest-box">🎁</div>
+          <div class="gacha-halo"></div>
+        </div>
+        <div class="gacha-info">
+          <h4>VÒNG QUAY MAY MẮN GACHA</h4>
+          <p>Mỗi lượt mở rương tốn <strong>50 Xu 🪙</strong>. Cơ hội nhận được Khung Avatar Hoàng Gia, Danh Hiệu Huyền Thoại hoặc Rương Xu siêu khủng!</p>
+          <div class="gacha-rates">
+            <span class="rate-tag common">⚪ Thường: 50%</span>
+            <span class="rate-tag rare">🔵 Hiếm: 35%</span>
+            <span class="rate-tag epic">🟣 Cực Hiếm: 12%</span>
+            <span class="rate-tag legendary">🟡 Huyền Thoại: 3%</span>
+          </div>
+          <button class="btn-primary btn-gacha-roll" id="btn-gacha-roll">Mở Rương Ngay (50 🪙)</button>
+        </div>
+        <!-- KẾT QUẢ GACHA -->
+        <div class="gacha-result-overlay" id="gacha-result-overlay" style="display:none;">
+          <div class="gacha-result-card" id="gacha-result-card">
+            <div class="result-light-ray"></div>
+            <div class="result-icon" id="gacha-res-icon">👑</div>
+            <div class="result-name" id="gacha-res-name">Vật Phẩm</div>
+            <div class="result-desc" id="gacha-res-desc">Mô tả</div>
+            <button class="btn-primary" id="btn-gacha-claim">Nhận Thưởng</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 3: TÚI ĐỒ TRANG BỊ -->
+      <div class="shop-grid" id="shop-view-inventory" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+
 <!-- SCRIPTS -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/particles.js"></script>
 <script src="js/theme.js"></script>
 <script src="js/sound.js"></script>
 <script src="js/streak.js"></script>
+<script src="js/shop.js"></script>
+<script src="js/auth.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/games/caroo.js"></script>
 <script src="js/games/chess.js"></script>
@@ -311,6 +584,8 @@
 <script src="js/games/pacman.js"></script>
 <script src="js/games/mario.js"></script>
 <script src="js/games/snake.js"></script>
+<script src="js/games/minesweeper.js"></script>
+<script src="js/games/pikachu.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

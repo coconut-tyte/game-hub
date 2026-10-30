@@ -33,7 +33,19 @@
     return theme === 'dark' ? '129,140,248' : '99,102,241';
   }
 
+  let isVisible = true;
+  document.addEventListener('visibilitychange', () => {
+    isVisible = !document.hidden;
+    if (isVisible && !animId) {
+      draw();
+    } else if (!isVisible && animId) {
+      cancelAnimationFrame(animId);
+      animId = null;
+    }
+  });
+
   function draw() {
+    if (!isVisible) return;
     ctx.clearRect(0, 0, W, H);
     const color = getAccentColor();
 

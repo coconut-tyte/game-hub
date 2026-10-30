@@ -633,6 +633,7 @@
             UIManager.showLoss({
               title: 'AI Thắng Rồi!',
               emoji: '🤖',
+              gameId: 'chess',
               onPlayAgain: () => startGame(gameMode),
             });
           }

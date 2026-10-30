@@ -30,6 +30,25 @@ const StreakManager = (() => {
     localStorage.setItem(KEYS.bestStreak, state.bestStreak);
     localStorage.setItem(KEYS.totalWins, state.totalWins);
     localStorage.setItem(KEYS.gameStats, JSON.stringify(state.gameStats));
+
+    // Đồng bộ wins & streak lên Supabase
+    syncStatsToCloud();
+  }
+
+  async function syncStatsToCloud() {
+    try {
+      if (typeof AuthManager === 'undefined' || !AuthManager.isLoggedIn()) return;
+      const user = AuthManager.getCurrentUser();
+      const client = AuthManager.getSupabaseClient ? AuthManager.getSupabaseClient() : null;
+      if (!user || !client) return;
+
+      await client.from('profiles').update({
+        wins: state.totalWins,
+        streak: state.streak
+      }).eq('id', user.id);
+    } catch (e) {
+      console.warn('StreakManager: Không thể đồng bộ lên cloud', e);
+    }
   }
 
   function updateUI() {
@@ -77,6 +96,11 @@ const StreakManager = (() => {
     if (score > state.gameStats[gameId].bestScore) {
       state.gameStats[gameId].bestScore = score;
       save();
+    }
+    // MỌI TRÒ CHƠI CÓ ĐIỂM ĐỀU THƯỞNG XU
+    if (score > 0 && window.ShopManager) {
+      const earned = Math.max(5, Math.floor(score / 6));
+      ShopManager.addCoins(earned, `Ghi ${score} điểm ở ${gameId}`);
     }
     return state.gameStats[gameId].bestScore;
   }

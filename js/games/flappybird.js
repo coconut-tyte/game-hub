@@ -16,9 +16,10 @@
 
   // ─── Difficulty configs ───────────────────────────────────────────────────
   const DIFFICULTIES = {
-    easy:   { gravity: 0.25, flapPower: -5.5, pipeSpeed: 2.0, pipeInterval: 110, gapSize: 175 },
-    normal: { gravity: 0.35, flapPower: -6.5, pipeSpeed: 2.8, pipeInterval:  90, gapSize: 145 },
-    hard:   { gravity: 0.45, flapPower: -7.5, pipeSpeed: 3.8, pipeInterval:  70, gapSize: 115 },
+    easy:    { gravity: 0.25, flapPower: -5.5, pipeSpeed: 2.0, pipeInterval: 110, gapSize: 175 },
+    normal:  { gravity: 0.35, flapPower: -6.5, pipeSpeed: 2.8, pipeInterval:  90, gapSize: 145 },
+    hard:    { gravity: 0.45, flapPower: -7.5, pipeSpeed: 3.8, pipeInterval:  70, gapSize: 115 },
+    reverse: { gravity: -0.32, flapPower: 6.2, pipeSpeed: 2.6, pipeInterval:  90, gapSize: 150 },
   };
 
   // ─── Constants ────────────────────────────────────────────────────────────
@@ -268,6 +269,8 @@
       UIManager.showLoss({
         title: `Game Over! Điểm: ${score}`,
         emoji: '💀',
+        gameId: 'flappybird',
+        score: score,
         onPlayAgain: restartGame,
       });
     }, 800);
@@ -507,8 +510,8 @@
 
     ctx.font = '14px Arial, sans-serif';
     ctx.fillStyle = '#ffe066';
-    const modeLabels = { easy: '😊 Dễ', normal: '😤 Thường', hard: '💀 Khó' };
-    ctx.fillText(`Chế độ: ${modeLabels[currentMode]}`, W / 2, H / 2 + 56);
+    const modeLabels = { easy: '😊 Dễ', normal: '😤 Thường', hard: '💀 Khó', reverse: '🔄 Đảo Trọng Lực' };
+    ctx.fillText(`Chế độ: ${modeLabels[currentMode] || currentMode}`, W / 2, H / 2 + 56);
 
     ctx.restore();
   }
@@ -556,9 +559,10 @@
     icon: '🐦',
     name: 'Flappy Bird',
     modes: [
-      { id: 'easy',   label: '😊 Dễ' },
-      { id: 'normal', label: '😤 Thường' },
-      { id: 'hard',   label: '💀 Khó' },
+      { id: 'normal',  label: '😤 Cổ Điển' },
+      { id: 'reverse', label: '🔄 Đảo Trọng Lực' },
+      { id: 'easy',    label: '😊 Dễ' },
+      { id: 'hard',    label: '💀 Khó' },
     ],
     startMode(modeId) {
       buildUI(modeId);

@@ -528,6 +528,7 @@
         UIManager.showLoss({
           title: 'Game Over! 💀',
           emoji: '👾',
+          gameId: 'pacman',
           score,
           onPlayAgain: () => initGame(currentMode),
         });

@@ -194,64 +194,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  /* ── XỬ LÝ QUAY GACHA ── */
-  const btnGachaRoll = document.getElementById('btn-gacha-roll');
-  const gachaChest = document.getElementById('gacha-chest-box');
-  const gachaResOverlay = document.getElementById('gacha-result-overlay');
-  const btnClaim = document.getElementById('btn-gacha-claim');
-
-  if (btnGachaRoll) {
-    btnGachaRoll.addEventListener('click', () => {
-      if (btnGachaRoll.disabled) return;
-
-      const res = ShopManager.rollGacha();
-      if (!res.success) {
-        UIManager.toast(`⚠️ ${res.msg}`, 'info');
-        return;
-      }
-
-      // Hiệu ứng mở rương
-      btnGachaRoll.disabled = true;
-      gachaChest.classList.add('shaking');
-      SoundManager.play('deal');
-
-      setTimeout(() => {
-        gachaChest.classList.remove('shaking');
-        btnGachaRoll.disabled = false;
-
-        const iconEl = document.getElementById('gacha-res-icon');
-        const nameEl = document.getElementById('gacha-res-name');
-        const descEl = document.getElementById('gacha-res-desc');
-        const cardEl = document.getElementById('gacha-result-card');
-
-        cardEl.className = 'gacha-result-card rarity-' + res.reward.rarity;
-
-        if (res.reward.type === 'coins') {
-          iconEl.textContent = res.reward.icon;
-          nameEl.textContent = res.reward.name;
-          descEl.textContent = `Bạn nhận được +${res.reward.amount} Xu 🪙 vào tài khoản!`;
-        } else if (res.reward.type === 'item') {
-          iconEl.textContent = res.item.icon;
-          nameEl.textContent = res.item.name;
-          if (res.duplicateCompensation) {
-            descEl.textContent = `Vật phẩm đã sở hữu! Đã quy đổi thành +${res.duplicateCompensation} Xu 🪙`;
-          } else {
-            descEl.textContent = `🎉 VẬT PHẨM MỚI! ${res.item.desc}`;
-          }
-        }
-
-        gachaResOverlay.style.display = 'flex';
-        SoundManager.play('win');
-      }, 1100);
-    });
-  }
-
-  if (btnClaim) {
-    btnClaim.addEventListener('click', () => {
-      gachaResOverlay.style.display = 'none';
-    });
-  }
-
   /* ── TẢI DỮ LIỆU BẢNG VÀNG VINH DANH (100% NGƯỜI THẬT TỪ SUPABASE) ── */
   async function loadHallOfFame() {
     const podium = document.getElementById('hof-podium');

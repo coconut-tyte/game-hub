@@ -38,9 +38,7 @@ const AuthManager = (() => {
     if (savedUser) {
       try {
         currentUser = JSON.parse(savedUser);
-        if (currentUser && currentUser.id && window.ShopManager) {
-          ShopManager.loadFromCloud(currentUser.id);
-        }
+
       } catch (e) {
         currentUser = null;
         localStorage.removeItem('gamehub_current_user');
@@ -95,9 +93,7 @@ const AuthManager = (() => {
           username,
           email,
           wins: 0,
-          streak: 0,
-          coins: 100,
-          inventory: { items: [], equipped: { frame: null, title: null, theme: null } }
+          streak: 0
         }]);
         if (profErr) {
           console.warn('Lưu profile thất bại:', profErr.message);
@@ -226,9 +222,7 @@ const AuthManager = (() => {
   function _saveSession(user) {
     localStorage.setItem('gamehub_current_user', JSON.stringify(user));
     updateNavbarUI();
-    if (user && user.id && window.ShopManager) {
-      ShopManager.loadFromCloud(user.id);
-    }
+
   }
 
   function updateNavbarUI() {
@@ -236,24 +230,16 @@ const AuthManager = (() => {
     if (!area) return;
 
     if (currentUser) {
-      // Lấy thông tin trang bị hiện tại để render ngay lập tức (không bị mất khi reload)
-      const inv = (window.ShopManager && ShopManager.getInventory) ? ShopManager.getInventory() : null;
-      const equipped = inv?.equipped || {};
-      const titleItem = (equipped.title && window.ShopManager?.getItem) ? ShopManager.getItem(equipped.title) : null;
-      const titleText = titleItem ? `【${titleItem.name}】` : '';
-      const frameClass = equipped.frame || '';
-
       area.innerHTML = `
         <div class="user-pill" style="
           display:flex; align-items:center; gap:8px;
           background:var(--card-bg); border:1px solid var(--border);
           padding:4px 12px; border-radius:999px; font-size:0.85rem; font-weight:700;
         ">
-          <div class="user-avatar-frame ${frameClass}" style="display:inline-flex; align-items:center; justify-content:center;">
+          <div style="display:inline-flex; align-items:center; justify-content:center;">
             <span>👤</span>
           </div>
           <span>${currentUser.username}</span>
-          <span class="user-title-display" style="font-size:0.75rem; color:#f59e0b; ${titleText ? 'display:inline-block;' : 'display:none;'}">${titleText}</span>
           <button id="logout-btn" style="
             background:transparent; border:none; color:#ef4444;
             cursor:pointer; font-size:0.8rem; font-weight:800; padding:2px 4px;
@@ -261,9 +247,6 @@ const AuthManager = (() => {
         </div>`;
       const btn = document.getElementById('logout-btn');
       if (btn) btn.onclick = logout;
-      if (window.ShopManager && ShopManager.applyEquippedEffects) {
-        ShopManager.applyEquippedEffects();
-      }
     } else {
       area.innerHTML = `
         <div style="display:flex; align-items:center; gap:6px;">

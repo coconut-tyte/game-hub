@@ -58,12 +58,6 @@ const UIManager = (() => {
     SoundManager.play('win');
     launchConfetti();
 
-    // THƯỞNG XU KHI THẮNG GAME
-    const bonusCoins = 35 + Math.min(65, streak * 10);
-    if (window.ShopManager) {
-      ShopManager.addCoins(bonusCoins, `Chiến thắng ${gameId ? (GameRegistry.get(gameId)?.name || gameId) : 'trò chơi'}`);
-    }
-
     // Lưu điểm lên Cloud Leaderboard
     if (gameId && score > 0) {
       saveGameScoreToCloud(gameId, score);
@@ -73,11 +67,10 @@ const UIManager = (() => {
     document.getElementById('win-title').textContent = title || (winner ? `${winner} Thắng!` : 'Bạn Đã Thắng!');
     
     let streakText = '';
-    const coinRewardText = `🪙 +${bonusCoins} Xu thưởng!`;
     if (message) {
-      streakText = `${message} • ${coinRewardText}` + (streak > 1 ? ` • 🔥 Chuỗi thắng: ${streak}` : '');
+      streakText = message + (streak > 1 ? ` • 🔥 Chuỗi thắng: ${streak}` : '');
     } else {
-      streakText = `${coinRewardText} • ` + (streak > 1 ? `🔥 Chuỗi thắng: ${streak} trận liên tiếp!` : (streak === 1 ? '🔥 Bắt đầu chuỗi thắng mới!' : ''));
+      streakText = streak > 1 ? `🔥 Chuỗi thắng: ${streak} trận liên tiếp!` : (streak === 1 ? '🔥 Bắt đầu chuỗi thắng mới!' : '');
     }
     document.getElementById('win-streak-msg').textContent = streakText;
 
@@ -102,12 +95,6 @@ const UIManager = (() => {
     StreakManager.recordLoss();
     SoundManager.play('lose');
 
-    // Thưởng xu tham gia cho mọi trò chơi
-    const coinsEarned = score > 0 ? Math.max(10, Math.floor(score / 8)) : 10;
-    if (window.ShopManager) {
-      ShopManager.addCoins(coinsEarned, `Thưởng tham gia ${gameId ? (GameRegistry.get(gameId)?.name || gameId) : 'trò chơi'}`);
-    }
-
     // Lưu điểm nếu có
     if (gameId && score > 0) {
       saveGameScoreToCloud(gameId, score);
@@ -116,10 +103,9 @@ const UIManager = (() => {
     document.getElementById('win-emoji').textContent = emoji;
     document.getElementById('win-title').textContent = title;
     
-    const coinMsg = `🪙 +${coinsEarned} Xu động viên!`;
     document.getElementById('win-streak-msg').textContent = message 
-      ? `${message} • ${coinMsg}` 
-      : `${coinMsg} • Chuỗi thắng đã trở về 0. Cố gắng ở ván sau nhé!`;
+      ? message 
+      : 'Chuỗi thắng đã trở về 0. Cố gắng ở ván sau nhé!';
 
     const overlay = document.getElementById('win-overlay');
     overlay.classList.add('active');
@@ -158,7 +144,6 @@ const UIManager = (() => {
   /* ── LEADERBOARD ĐA TRÒ CHƠI (MULTI-GAME LEADERBOARD) ── */
   const LEADERBOARD_GAMES = [
     { id: 'all',         name: 'Tổng Hợp',          icon: '⭐', isScore: false },
-    { id: 'pikachu',     name: 'Pikachu Cổ Điển',   icon: '⚡', isScore: true,  unit: 'điểm' },
     { id: 'caroo',       name: 'Caro',              icon: '⬛', isScore: false, unit: 'thắng' },
     { id: 'chess',       name: 'Cờ Vua',            icon: '♟️', isScore: false, unit: 'thắng' },
     { id: 'xiangqi',     name: 'Cờ Tướng',          icon: '🀄', isScore: false, unit: 'thắng' },
@@ -235,7 +220,7 @@ const UIManager = (() => {
           if (topContainer && data && data.length > 0) {
             topContainer.innerHTML = data.map((u, idx) => {
               const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
-              const titleItem = u.inventory?.equipped?.title ? (window.ShopManager?.getItem(u.inventory.equipped.title)) : null;
+              const titleItem = null;
               return `
                 <div class="lb-rank-row rank-${idx + 1}">
                   <span class="rank-medal">${medals[idx] || (idx + 1)}</span>

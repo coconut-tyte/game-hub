@@ -102,11 +102,7 @@ const StreakManager = (() => {
       state.gameStats[gameId].bestScore = score;
       save();
     }
-    // MỌI TRÒ CHƠI CÓ ĐIỂM ĐỀU THƯỞNG XU
-    if (score > 0 && window.ShopManager) {
-      const earned = Math.max(5, Math.floor(score / 6));
-      ShopManager.addCoins(earned, `Ghi ${score} điểm ở ${gameId}`);
-    }
+
     return state.gameStats[gameId].bestScore;
   }
 

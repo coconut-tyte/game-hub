@@ -48,8 +48,8 @@
     </div>
   </div>
   <div class="nav-actions">
-    <button class="btn-icon shop-btn-nav" id="shop-nav-btn" title="Cửa hàng trang trí">🛍️ <span class="nav-btn-text">Shop</span></button>
-    <button class="btn-icon gacha-btn-nav" id="gacha-nav-btn" title="Vòng quay Gacha may mắn">🎰 <span class="nav-btn-text">Gacha</span></button>
+    <a href="shop.html?tab=shop" class="btn-icon shop-btn-nav" id="shop-nav-btn" title="Cửa hàng trang trí" style="text-decoration:none;">🛍️ <span class="nav-btn-text">Shop</span></a>
+    <a href="shop.html?tab=gacha" class="btn-icon gacha-btn-nav" id="gacha-nav-btn" title="Vòng quay Gacha may mắn" style="text-decoration:none;">🎲 <span class="nav-btn-text">Gacha</span></a>
     <button class="btn-icon" id="guide-btn" title="Hướng dẫn người mới">❓</button>
     <button class="btn-icon" id="leaderboard-btn" title="Bảng xếp hạng & Vinh danh">🏆</button>
     <button class="btn-icon" id="theme-toggle" title="Đổi giao diện">🌙</button>
@@ -107,41 +107,10 @@
     </div>
     <p class="hof-subtitle">Tôn vinh những huyền thoại thống trị đấu trường Game Hub</p>
     <div class="hof-podium" id="hof-podium">
-      <!-- TOP 2 -->
-      <div class="podium-rank rank-2">
-        <div class="podium-crown">🥈</div>
-        <div class="podium-avatar-wrapper frame-fire">
-          <div class="podium-avatar">🐉</div>
-        </div>
-        <div class="podium-name" id="hof-name-2">DragonKnight</div>
-        <div class="podium-title-tag">【Chiến Thần】</div>
-        <div class="podium-score"><span id="hof-score-2">1,250</span> Thắng</div>
-        <div class="podium-pillar pillar-2"><span>#2</span></div>
-      </div>
-      <!-- TOP 1 -->
-      <div class="podium-rank rank-1">
-        <div class="podium-crown">👑</div>
-        <div class="podium-avatar-wrapper frame-gold">
-          <div class="podium-avatar">⚡</div>
-        </div>
-        <div class="podium-name" id="hof-name-1">PikaKing_01</div>
-        <div class="podium-title-tag">【Đại Gia Game Hub】</div>
-        <div class="podium-score"><span id="hof-score-1">2,480</span> Thắng</div>
-        <div class="podium-pillar pillar-1"><span>#1</span></div>
-      </div>
-      <!-- TOP 3 -->
-      <div class="podium-rank rank-3">
-        <div class="podium-crown">🥉</div>
-        <div class="podium-avatar-wrapper frame-neon">
-          <div class="podium-avatar">🦊</div>
-        </div>
-        <div class="podium-name" id="hof-name-3">ShadowFox</div>
-        <div class="podium-title-tag">【Thần Đồng】</div>
-        <div class="podium-score"><span id="hof-score-3">980</span> Thắng</div>
-        <div class="podium-pillar pillar-3"><span>#3</span></div>
+      <div style="text-align:center; padding:30px; width:100%; color:var(--text-secondary); font-size:0.95rem;">
+        ⚡ Đang tải dữ liệu cao thủ từ Supabase...
       </div>
     </div>
-  </div>
 </section>
 
 <!-- GAMES GRID -->
@@ -160,7 +129,7 @@
   <div class="games-grid" id="games-grid">
 
     <!-- PIKACHU CỔ ĐIỂN -->
-    <div class="game-card hot-game" data-game="pikachu" data-category="puzzle">
+    <div class="game-card hot-game" data-game="pikachu" data-category="puzzle" onclick="GameModal.open('pikachu')">
       <div class="card-glow"></div>
       <div class="card-badge">MỚI & HOT 🔥</div>
       <div class="card-icon">⚡</div>

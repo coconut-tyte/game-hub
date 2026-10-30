@@ -95,7 +95,9 @@ const AuthManager = (() => {
           username,
           email,
           wins: 0,
-          streak: 0
+          streak: 0,
+          coins: 100,
+          inventory: { items: [], equipped: { frame: null, title: null, theme: null } }
         }]);
         if (profErr) {
           console.warn('Lưu profile thất bại:', profErr.message);

@@ -376,11 +376,9 @@ const GameModal = (() => {
   const modal   = document.getElementById('game-modal');
 
   function open(gameId) {
-    // CHẶN BẮT BUỘC ĐĂNG NHẬP Ở CẤP ĐỘ HỆ THỐNG
+    // Mở game trực tiếp - nếu chưa đăng nhập thì nhắc nhẹ chế độ Khách (Guest)
     if (typeof AuthManager !== 'undefined' && !AuthManager.isLoggedIn()) {
-      UIManager.toast('🔒 BẮT BUỘC ĐĂNG NHẬP để mở và chơi game!', 'info');
-      AuthManager.openAuthModal('login');
-      return;
+      UIManager.toast('ℹ️ Bạn đang chơi với tư cách Khách. Đăng nhập để lưu điểm & xếp hạng!', 'info', 3000);
     }
 
     const def = GameRegistry.get(gameId);

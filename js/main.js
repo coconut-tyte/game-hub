@@ -24,18 +24,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  /* ── GAME CARD CLICK (BẮT BUỘC ĐĂNG NHẬP) ── */
+  /* ── GAME CARD CLICK (MỞ NGAY LẬP TỨC) ── */
   document.querySelectorAll('.game-card, .play-btn').forEach(el => {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
       const card = el.closest('.game-card') || el;
       const gameId = card.dataset.game;
       if (gameId) {
-        if (typeof AuthManager !== 'undefined' && !AuthManager.isLoggedIn()) {
-          UIManager.toast('⚠️ Bạn cần Đăng Nhập hoặc Tạo Tài Khoản để chơi game!', 'info');
-          AuthManager.openAuthModal('login');
-          return;
-        }
         GameModal.open(gameId);
       }
     });
@@ -257,8 +252,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /* ── TẢI DỮ LIỆU BẢNG VÀNG VINH DANH (HALL OF FAME) ── */
+  /* ── TẢI DỮ LIỆU BẢNG VÀNG VINH DANH (100% NGƯỜI THẬT TỪ SUPABASE) ── */
   async function loadHallOfFame() {
+    const podium = document.getElementById('hof-podium');
+    if (!podium) return;
+
     try {
       if (typeof AuthManager !== 'undefined') {
         const client = AuthManager.getSupabaseClient ? AuthManager.getSupabaseClient() : null;
@@ -269,28 +267,64 @@ document.addEventListener('DOMContentLoaded', () => {
             .order('wins', { ascending: false })
             .limit(3);
 
-          if (data && data.length > 0 && !error) {
-            const ranks = [
-              { nameId: 'hof-name-1', scoreId: 'hof-score-1', idx: 0 },
-              { nameId: 'hof-name-2', scoreId: 'hof-score-2', idx: 1 },
-              { nameId: 'hof-name-3', scoreId: 'hof-score-3', idx: 2 }
-            ];
+          if (!error && data && data.length > 0) {
+            const top1 = data[0] || null;
+            const top2 = data[1] || null;
+            const top3 = data[2] || null;
 
-            ranks.forEach(r => {
-              const user = data[r.idx];
-              if (user) {
-                const nEl = document.getElementById(r.nameId);
-                const sEl = document.getElementById(r.scoreId);
-                if (nEl) nEl.textContent = user.username;
-                if (sEl) sEl.textContent = (user.wins || 0).toLocaleString();
+            const renderUserPodium = (user, rankNum, crown, frameClass, defaultAvatar, pillarClass) => {
+              if (!user) {
+                return `
+                  <div class="podium-rank rank-${rankNum}">
+                    <div class="podium-crown">${crown}</div>
+                    <div class="podium-avatar-wrapper" style="opacity:0.6;">
+                      <div class="podium-avatar">👤</div>
+                    </div>
+                    <div class="podium-name" style="color:var(--text-secondary);">Chờ ghi danh...</div>
+                    <div class="podium-title-tag">Vị trí #${rankNum}</div>
+                    <div class="podium-score">0 Thắng</div>
+                    <div class="podium-pillar ${pillarClass}"><span>#${rankNum}</span></div>
+                  </div>
+                `;
               }
-            });
+
+              const inv = user.inventory || {};
+              const equipped = inv.equipped || {};
+              const frame = equipped.frame ? `frame-${equipped.frame.replace('frame_', '')}` : frameClass;
+              const titleName = equipped.title ? (equipped.title.replace('title_', '').toUpperCase()) : 'Cao Thủ';
+
+              return `
+                <div class="podium-rank rank-${rankNum}">
+                  <div class="podium-crown">${crown}</div>
+                  <div class="podium-avatar-wrapper ${frame}">
+                    <div class="podium-avatar">${defaultAvatar}</div>
+                  </div>
+                  <div class="podium-name" title="${user.username}">${user.username}</div>
+                  <div class="podium-title-tag">🎖️ ${titleName}</div>
+                  <div class="podium-score"><strong>${(user.wins || 0).toLocaleString()}</strong> Thắng</div>
+                  <div class="podium-pillar ${pillarClass}"><span>#${rankNum}</span></div>
+                </div>
+              `;
+            };
+
+            podium.innerHTML = 
+              renderUserPodium(top2, 2, '🥈', 'frame-fire', '🔥', 'pillar-2') +
+              renderUserPodium(top1, 1, '👑', 'frame-gold', '⚡', 'pillar-1') +
+              renderUserPodium(top3, 3, '🥉', 'frame-neon', '🦊', 'pillar-3');
+            return;
           }
         }
       }
     } catch (e) {
       console.warn('Load Hall of Fame fallback:', e);
     }
+
+    // Nếu chưa có tài khoản nào trên Supabase
+    podium.innerHTML = `
+      <div style="text-align:center; padding:30px; width:100%; color:var(--text-secondary); font-size:1rem;">
+        🌟 Chưa có người chơi ghi danh trên Bảng Vinh Danh. Hãy chơi và giành chiến thắng đầu tiên để đứng Top 1!
+      </div>
+    `;
   }
 
   loadHallOfFame();

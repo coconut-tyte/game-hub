@@ -40,12 +40,17 @@ const StreakManager = (() => {
       if (typeof AuthManager === 'undefined' || !AuthManager.isLoggedIn()) return;
       const user = AuthManager.getCurrentUser();
       const client = AuthManager.getSupabaseClient ? AuthManager.getSupabaseClient() : null;
-      if (!user || !client) return;
+      if (!user || !client || !user.id) return;
 
-      await client.from('profiles').update({
+      const { error } = await client.from('profiles').update({
         wins: state.totalWins,
         streak: state.streak
       }).eq('id', user.id);
+      if (error) {
+        console.warn('Streak sync error:', error.message);
+      } else {
+        console.log('✅ Đã đồng bộ wins & streak lên Supabase:', state.totalWins, state.streak);
+      }
     } catch (e) {
       console.warn('StreakManager: Không thể đồng bộ lên cloud', e);
     }

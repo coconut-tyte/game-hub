@@ -3,7 +3,7 @@ const $ = (s) => document.querySelector(s);
 const esc = (t) => Object.assign(document.createElement('i'), { textContent: t }).innerHTML;
 const RARITY = { common:'Thường', rare:'Hiếm', epic:'Sử thi', legendary:'Huyền thoại', mythic:'Thần thoại', secret:'Secret' };
 const GUIDE = { fps:'Bấm vào mục tiêu xuất hiện ngẫu nhiên trong 15 giây. Mục tiêu 🎯 +1, vàng ⭐ +3.' };
-let me = null, games = [], perks = {};
+let me = null, games = [], perks = {}, cur = 'hub';
 const PERK = { coin_bonus:v=>`+${v}% xu nhận được`, extra_life:v=>`+${v} mạng/khiên khởi đầu`, score_boost:v=>`+${v}% điểm Bắn Súng`, bonus_time:v=>`+${v}s thời gian Pikachu` };
 
 // ---------- Loading ----------
@@ -26,17 +26,31 @@ function creds(){
   if (p.length < 6) { $('#authMsg').textContent = 'Mật khẩu cần ít nhất 6 ký tự'; return null; }
   return { u, p };
 }
-$('#signup').onclick = async () => {
+function viMsg(e){
+  const m = (e.message || '').toLowerCase();
+  if (m.includes('already')) return 'Tên này đã có người dùng, hãy bấm Đăng nhập';
+  if (m.includes('invalid login')) return 'Sai tên đăng nhập hoặc mật khẩu';
+  if (m.includes('not confirmed')) return 'Tài khoản chưa xác nhận (cần tắt Confirm email trong Supabase)';
+  if (m.includes('rate') || m.includes('security')) return 'Bạn thao tác quá nhanh, thử lại sau ít phút nhé';
+  if (m.includes('fetch') || m.includes('network')) return 'Không kết nối được máy chủ, kiểm tra mạng nhé';
+  return 'Có lỗi: ' + e.message;
+}
+async function authDo(kind){
   const c = creds(); if (!c) return;
-  const { error } = await sb.auth.signUp({ email: mail(c.u), password: c.p, options:{ data:{ username: c.u.toLowerCase() } } });
-  if (error) $('#authMsg').textContent = error.message.includes('registered') ? 'Tên này đã có người dùng' : error.message;
-  else await enter();
-};
-$('#login').onclick = async () => {
-  const c = creds(); if (!c) return;
-  const { error } = await sb.auth.signInWithPassword({ email: mail(c.u), password: c.p });
-  if (error) $('#authMsg').textContent = 'Sai tên đăng nhập hoặc mật khẩu'; else await enter();
-};
+  $('#signup').disabled = $('#login').disabled = true; $('#authMsg').textContent = '';
+  try {
+    let r;
+    if (kind === 'up') {
+      r = await sb.auth.signUp({ email: mail(c.u), password: c.p, options:{ data:{ username: c.u.toLowerCase() } } });
+      if (!r.error && !r.data.session) r = await sb.auth.signInWithPassword({ email: mail(c.u), password: c.p });
+    } else r = await sb.auth.signInWithPassword({ email: mail(c.u), password: c.p });
+    if (r.error) throw r.error;
+    await enter();
+  } catch (e) { $('#authMsg').textContent = viMsg(e); }
+  $('#signup').disabled = $('#login').disabled = false;
+}
+$('#signup').onclick = () => authDo('up'); $('#login').onclick = () => authDo('in');
+['#u', '#p'].forEach(q => $(q).addEventListener('keydown', e => { if (e.key === 'Enter') authDo('in'); }));
 $('#logout').onclick = async () => { await sb.auth.signOut(); location.reload(); };
 
 async function enter(){
@@ -47,7 +61,7 @@ async function enter(){
 async function refreshMe(){
   const { data:{ user } } = await sb.auth.getUser();
   ({ data: me } = await sb.from('profiles').select('*').eq('id', user.id).single());
-  $('#coins').textContent = me.coins; $('#me').textContent = me.username;
+  countTo($('#coins'), me.coins); $('#me').textContent = me.username;
   const { data: up } = await sb.from('user_pets').select('pets(perk,perk_value)');
   perks = {}; (up || []).forEach(({ pets: q }) => perks[q.perk] = Math.max(perks[q.perk] || 0, q.perk_value));
 }
@@ -56,6 +70,7 @@ async function refreshMe(){
 document.querySelectorAll('.tab').forEach(b => b.onclick = () => go(b.dataset.v));
 function go(v){
   document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', b.dataset.v === v));
+  cur = v; const vw = $('#view'); vw.classList.remove('enter'); void vw.offsetWidth; vw.classList.add('enter');
   ({ hub, rank, quest, pets })[v]();
 }
 
@@ -75,8 +90,8 @@ function tilt(el){
 
 // ---------- Màn hình ----------
 function hub(){
-  $('#view').innerHTML = '<div class="grid">' + games.map(g =>
-    `<div class="card glass" data-g="${esc(g.id)}" tabindex="0"><div class="e">${g.emoji}</div><h3>${esc(g.name)}</h3><small>${Games[g.id] ? 'Chơi ngay' : 'Sắp có'}</small></div>`).join('') + '</div>';
+  $('#view').innerHTML = '<div class="grid">' + games.map((g, n) =>
+    `<div class="card glass" style="--i:${n}" data-g="${esc(g.id)}" tabindex="0"><div class="e">${g.emoji}</div><h3>${esc(g.name)}</h3><small>${Games[g.id] ? 'Chơi ngay' : 'Sắp có'}</small></div>`).join('') + '</div>';
   document.querySelectorAll('.card').forEach(c => { tilt(c); c.onclick = () => openGame(c.dataset.g); });
 }
 async function rank(sel = games[0].id){
@@ -97,33 +112,79 @@ async function quest(){
     if (!error) { await refreshMe(); quest(); }
   });
 }
-async function pets(){
-  const { data } = await sb.from('user_pets').select('pets(*)');
-  $('#view').innerHTML = `<div class="glass" style="padding:1.2rem;text-align:center"><button class="btn" id="roll" ${me.coins<100?'disabled':''}>🎁 Quay Gacha (🪙100)</button><div id="got" style="font-size:1.2rem;min-height:3rem;margin-top:.8rem"></div></div>
-    <h3>Bộ sưu tập (${data.length})</h3><div class="grid">` + data.map(({ pets:p }) =>
-    `<div class="card glass"><div class="e">${p.emoji}</div><h3>${esc(p.name)}</h3><b class="r-${p.rarity}">${RARITY[p.rarity]}</b><br><small>${(PERK[p.perk] || (() => ''))(p.perk_value)}</small></div>`).join('') + '</div>';
-  document.querySelectorAll('.card').forEach(tilt);
-  $('#roll').onclick = async () => {
-    const { data:p, error } = await sb.rpc('gacha_roll');
-    if (error) return $('#got').textContent = 'Không đủ xu!';
-    await refreshMe(); pets();
-    setTimeout(() => $('#got').innerHTML = `Bạn nhận được ${p.emoji} <b class="r-${p.rarity}">${esc(p.name)} (${RARITY[p.rarity]})</b>!`, 50);
-  };
+const GLOW = { common:'#9aa0a6', rare:'#3b8bff', epic:'#a24bff', legendary:'#ff9d00', mythic:'#ff3b7b', secret:'#00d1a0' };
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+const modal = $('#modal');
+function countTo(el, to){
+  const from = +el.textContent || 0; if (from === to) return;
+  const t0 = performance.now();
+  (function step(t){ const k = Math.min(1, (t - t0) / 600); el.textContent = Math.round(from + (to - from) * k); if (k < 1) requestAnimationFrame(step); })(t0);
+}
+function toast(msg){ const d = document.createElement('div'); d.className = 'toast'; d.textContent = msg; document.body.append(d); setTimeout(() => d.remove(), 2500); }
+function confetti(n = 40, cols = ['#ff7eb6', '#ffd166', '#7fe0c3', '#8ec5ff']){
+  const w = document.createElement('div'); w.className = 'confetti';
+  for (let i = 0; i < n; i++) { const e = document.createElement('i');
+    e.style.cssText = `left:${Math.random() * 100}%;background:${cols[i % cols.length]};--dx:${(Math.random() - .5) * 240}px;--r:${Math.random() * 720}deg;animation-delay:${Math.random() * .3}s`; w.append(e); }
+  document.body.append(w); setTimeout(() => w.remove(), 2400);
 }
 
-// ---------- Khung chơi game (dùng chung) ----------
+// ---------- Gacha có pity + hiệu ứng ----------
+async function pets(){
+  const { data } = await sb.from('user_pets').select('pets(*)');
+  const pe = me.pity_epic || 0, pl = me.pity_leg || 0;
+  $('#view').innerHTML = `<div class="glass" style="padding:1.2rem;text-align:center"><div class="egg">🥚</div>
+    <button class="btn" id="roll" ${me.coins < 100 ? 'disabled' : ''}>🎁 Quay Gacha (🪙100)</button>
+    <div class="pity"><small>Sử thi+ chắc chắn sau <b>${10 - pe}</b> lượt</small><div class="bar"><i style="width:${pe * 10}%"></i></div>
+    <small>Huyền thoại+ chắc chắn sau <b>${50 - pl}</b> lượt</small><div class="bar"><i style="width:${pl * 2}%"></i></div></div></div>
+    <h3>Bộ sưu tập (${data.length})</h3><div class="grid">` + data.map(({ pets: p }, n) =>
+    `<div class="card glass" style="--i:${n}"><div class="e">${p.emoji}</div><h3>${esc(p.name)}</h3><b class="r-${p.rarity}">${RARITY[p.rarity]}</b><br><small>${(PERK[p.perk] || (() => ''))(p.perk_value)}</small></div>`).join('') + '</div>';
+  document.querySelectorAll('.card').forEach(tilt);
+  $('#roll').onclick = roll;
+}
+async function roll(){
+  const b = $('#roll'); if (b) b.disabled = true;
+  const { data: r, error } = await sb.rpc('gacha_roll');
+  if (error) { toast('Không đủ xu hoặc có lỗi, thử lại nhé'); return go('pets'); }
+  const p = r.pet, gc = GLOW[p.rarity], big = ['epic', 'legendary', 'mythic', 'secret'].includes(p.rarity);
+  openModal(`<div class="gstage" style="--gc:${gc}"><div class="gegg shake" id="ge">🥚</div><p>Đang ấp trứng…</p></div>`);
+  await sleep(1400); $('#ge')?.classList.replace('shake', 'crack'); await sleep(450);
+  if (['mythic', 'secret'].includes(p.rarity)) { const f = document.createElement('div'); f.id = 'flash'; document.body.append(f); setTimeout(() => f.remove(), 800); }
+  if (big) confetti(p.rarity === 'epic' ? 30 : 70, [gc, '#ffd166', '#ffffff']);
+  await refreshMe();
+  setBox(`<div class="gstage" style="--gc:${gc}"><div class="flip"><div class="face"><div style="font-size:4.5rem">${p.emoji}</div><h2>${esc(p.name)}</h2><b class="r-${p.rarity}">${RARITY[p.rarity]}</b><small>${(PERK[p.perk] || (() => ''))(p.perk_value)}</small></div></div>
+    <p>${r.isnew ? '✨ Thú mới!' : `Đã có rồi, hoàn 🪙${r.refund}`}</p>
+    <p><small>Sử thi+ sau ${10 - r.pity_epic} lượt · Huyền thoại+ sau ${50 - r.pity_leg} lượt</small></p>
+    <button class="btn" id="again" ${me.coins < 100 ? 'disabled' : ''}>Quay tiếp (🪙100)</button></div>`);
+  $('#again').onclick = () => { closeModal(); setTimeout(roll, 280); };
+}
+
+// ---------- Khung (modal) gọn gàng, luôn đóng được ----------
+function setBox(html){ $('#box').innerHTML = `<button class="xbtn" id="xx" aria-label="Đóng">✕</button>` + html; $('#xx').onclick = closeGame; }
+function openModal(html){
+  setBox(html); modal.classList.remove('hidden');
+  requestAnimationFrame(() => requestAnimationFrame(() => modal.classList.add('show')));
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(){
+  modal.classList.remove('show'); document.body.style.overflow = '';
+  setTimeout(() => { if (!modal.classList.contains('show')) modal.classList.add('hidden'); }, 260);
+}
 let stopGame = null;
+function closeGame(){ stopGame?.(); stopGame = null; closeModal(); go(cur); }
+modal.addEventListener('pointerdown', (e) => { if (e.target === modal) closeGame(); });
+addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.classList.contains('show')) closeGame(); });
+
 function openGame(id){
   const g = games.find(x => x.id === id), G = Games[id];
-  $('#modal').classList.remove('hidden');
-  if (!G){
-    $('#box').innerHTML = `<h2>${g.emoji} ${esc(g.name)}</h2><p>Game này đang được xây dựng.</p><button class="btn" id="x">Đóng</button>`;
-    return $('#x').onclick = closeGame;
-  }
-  $('#box').innerHTML = `<h2>${g.emoji} ${esc(g.name)}</h2><p>${esc(G.guide)}</p><div id="arena"></div><p id="hud"></p><button class="btn" id="go">Bắt đầu</button> <button class="btn alt" id="x">Thoát</button>`;
-  $('#x').onclick = closeGame;
-  $('#go').onclick = () => {
-    $('#go').classList.add('hidden');
+  if (!G) return openModal(`<h2>${g.emoji} ${esc(g.name)}</h2><p>Game này đang được xây dựng. Quay lại sau nhé!</p>`);
+  openModal(`<h2>${g.emoji} ${esc(g.name)}</h2><details id="gd" open><summary>📖 Hướng dẫn tân thủ</summary><p style="text-align:left">${esc(G.guide)}</p></details>
+    <button class="btn" id="go">▶ Bắt đầu</button><p id="hud"></p><div id="arena"></div>`);
+  $('#go').onclick = async () => {
+    $('#go').classList.add('hidden'); $('#gd').open = false;
+    for (const n of ['3', '2', '1', 'Go!']) {
+      const d = document.createElement('div'); d.className = 'cd'; d.textContent = n; $('#box').append(d);
+      await sleep(650); d.remove(); if (!modal.classList.contains('show')) return;
+    }
     stopGame = G.start($('#arena'), {
       perks,
       setHud: (t) => { const h = $('#hud'); if (h) h.textContent = t; },
@@ -131,12 +192,12 @@ function openGame(id){
         stopGame?.(); stopGame = null;
         const { data: earned } = await sb.rpc('submit_score', { p_game: id, p_score: score, p_won: won });
         await refreshMe();
-        $('#box').innerHTML = `<h2>${won ? 'Chiến thắng! 🎉' : 'Hết lượt! 💫'}</h2><p>Điểm: <b>${score}</b> · Nhận 🪙${earned ?? 0}</p><button class="btn" id="x">Về Hub</button>`;
-        $('#x').onclick = closeGame;
+        if (won) confetti(50);
+        setBox(`<h2>${won ? 'Chiến thắng! 🎉' : 'Hết lượt! 💫'}</h2><p style="font-size:1.3rem">Điểm: <b>${score}</b></p><p>Nhận 🪙 <b>${earned ?? 0}</b></p><button class="btn" id="again">Chơi lại</button>`);
+        $('#again').onclick = () => openGame(id);
       }
     });
   };
 }
-function closeGame(){ stopGame?.(); stopGame = null; $('#modal').classList.add('hidden'); go('hub'); }
 
 boot();

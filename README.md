@@ -50,3 +50,8 @@ Thêm 1 dòng vào bảng `games`, viết game, rồi khi kết thúc gọi:
 ## Nội tại thú cưng
 Schema đã gồm sẵn thú cưng nội tại: Chim Én Vàng (+1 mạng/khiên), Mèo Ninja (+20% điểm Bắn Súng), Thỏ Đồng Hồ (+15s Pikachu).
 Thú có `coin_bonus` tăng xu nhận được (tính ở server). Các nội tại còn lại tính ở trình duyệt nên chỉ mang tính trải nghiệm, không nên dùng để xếp hạng nghiêm túc.
+
+## Gacha pity
+- Sử thi trở lên chắc chắn sau tối đa 10 lượt; Huyền thoại trở lên chắc chắn sau tối đa 50 lượt (đếm riêng, tự reset khi trúng).
+- Trùng thú đã có sẽ được hoàn 30 xu.
+- Logic nằm trong hàm `gacha_roll` ở Supabase (đã được áp dụng vào database).

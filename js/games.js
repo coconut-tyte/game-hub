@@ -36,7 +36,14 @@ Games.minesweeper = {
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
         const a = x + dx, b = y + dy; if ((dx || dy) && a >= 0 && b >= 0 && a < N && b < N) o.push(b * N + a); }
       return o; };
-    const btns = cells.map((c) => { const b = document.createElement('button'); b.className = 'cell'; b.onclick = () => tap(c); g.append(b); return b; });
+    let lpT = null, lp = false;
+    const flagIt = (c) => { if (over || c.r) return; c.f ^= 1; draw(c); };
+    const btns = cells.map((c) => { const b = document.createElement('button'); b.className = 'cell';
+      b.onpointerdown = () => { lp = false; lpT = setTimeout(() => { lp = true; navigator.vibrate?.(20); flagIt(c); }, 420); };
+      b.onpointerup = b.onpointerleave = () => clearTimeout(lpT);
+      b.oncontextmenu = (e) => { e.preventDefault(); flagIt(c); };
+      b.onclick = () => { if (lp) { lp = false; return; } tap(c); };
+      g.append(b); return b; });
     const draw = (c) => { const b = btns[c.i];
       b.textContent = c.f && !c.r ? '🚩' : !c.r ? '' : c.m ? '💣' : (c.t ? '💎' : c.x ? '🌀' : '') + (c.n || '');
       b.className = 'cell' + (c.r ? ' open' : '') + (c.r && c.n && !c.m ? ' n' + c.n : ''); };
@@ -50,18 +57,18 @@ Games.minesweeper = {
       pool.slice(MINES + TREAS, MINES + TREAS + TRAPS).forEach((c) => c.x = 1);
       cells.forEach((c) => c.n = nb(c.i).filter((j) => cells[j].m).length);
     }
-    function reveal(c) {
-      if (c.r || c.f) return; c.r = 1; open++; if (c.t) gems++;
+    function reveal(c, d = 0) {
+      if (c.r) return; c.f = 0; c.r = 1; open++; if (c.t) gems++;
       if (c.x) { pen += 50; g.style.filter = 'hue-rotate(160deg)'; setTimeout(() => g.style.filter = '', 4000); }
-      draw(c);
-      if (!c.n) nb(c.i).forEach((j) => !cells[j].m && reveal(cells[j]));
+      draw(c); btns[c.i].classList.add('pop'); btns[c.i].style.animationDelay = Math.min(d, 12) * 35 + 'ms';
+      if (!c.n) nb(c.i).forEach((j) => !cells[j].m && reveal(cells[j], d + 1));
     }
     function tap(c) {
       if (over || c.r) return;
       if (flag) { c.f ^= 1; return draw(c); }
       if (c.f) return;
       if (!placed) { place(c.i); placed = true; }
-      if (c.m) { over = true; cells.filter((x) => x.m).forEach((x) => { x.r = 1; draw(x); }); return setTimeout(() => api.finish(Math.max(0, gems * 100 - pen), false), 900); }
+      if (c.m) { over = true; g.classList.add('shake'); cells.filter((x) => x.m).forEach((x) => { x.r = 1; draw(x); }); return setTimeout(() => api.finish(Math.max(0, gems * 100 - pen), false), 900); }
       reveal(c); hud();
       if (open === N * N - MINES) { over = true; api.finish(Math.max(0, 500 + gems * 100 + Math.max(0, 300 - Math.round((Date.now() - t0) / 1000)) - pen), true); }
     }
@@ -105,7 +112,8 @@ Games.flappy = {
       pipes.forEach((p) => { c.fillRect(p.x, 0, 44, p.gy - 55); c.fillRect(p.x, p.gy + 55, 44, 420); });
       c.font = '24px serif'; c.textAlign = 'center';
       items.forEach((i) => c.fillText(i.k, i.x, i.y + 8));
-      c.font = '28px serif'; c.fillText('🐤', 60, y + 10);
+      c.fillStyle = '#fff7'; pipes.forEach((p) => { c.fillRect(p.x + 4, 0, 6, p.gy - 55); c.fillRect(p.x + 4, p.gy + 55, 6, 420); });
+      c.font = '28px serif'; c.save(); c.translate(60, y); c.rotate(Math.max(-.5, Math.min(1, v / 10))); c.fillText('🐤', 0, 10); c.restore();
       if (shield) { c.strokeStyle = '#5a9fe0'; c.lineWidth = 3; c.beginPath(); c.arc(60, y, 20, 0, 7); c.stroke(); }
       api.setHud(`Điểm: ${score}${low > 0 ? ' · 🪶 nhẹ' : ''}${fast > 0 ? ' · ⚡' : ''}`);
       raf = requestAnimationFrame(loop);
@@ -123,14 +131,14 @@ Games.pikachu = {
     const g = Array(W * H).fill(null), D = [[1,0],[-1,0],[0,1],[0,-1]];
     const pool = ICONS.flatMap((i) => [i, i, i, i]).sort(() => Math.random() - .5);
     for (let y = 1; y <= 6; y++) for (let x = 1; x <= 8; x++) g[y * W + x] = pool.pop();
-    let sel = null, time = 120 + (api.perks.bonus_time || 0), frozen = 0, pairs = 0, over = false; const items = { freeze: 0, shuffle: 1 };
+    let lock = false, sel = null, time = 120 + (api.perks.bonus_time || 0), frozen = 0, pairs = 0, over = false; const items = { freeze: 0, shuffle: 1 };
     el.innerHTML = '<div style="margin-bottom:.5rem"><button class="btn alt" id="fz"></button> <button class="btn alt" id="sh"></button></div><div class="pk"></div>';
     const board = el.querySelector('.pk'), btns = {};
     for (let y = 1; y <= 6; y++) for (let x = 1; x <= 8; x++) {
       const i = y * W + x, b = document.createElement('button'); b.className = 'cell'; b.onclick = () => tap(i); board.append(b); btns[i] = b;
     }
     const draw = () => {
-      Object.keys(btns).forEach((i) => { btns[i].textContent = g[i] || ''; btns[i].style.visibility = g[i] ? 'visible' : 'hidden'; btns[i].style.outline = sel == i ? '3px solid #ff7eb6' : ''; });
+      Object.keys(btns).forEach((i) => { btns[i].textContent = g[i] || ''; btns[i].style.visibility = g[i] ? 'visible' : 'hidden'; btns[i].classList.toggle('sel', sel == i); });
       el.querySelector('#fz').textContent = `🧊 x${items.freeze}`; el.querySelector('#sh').textContent = `🔀 x${items.shuffle}`;
       api.setHud(`Cặp còn lại: ${24 - pairs} · ⏱ ${time}s${frozen ? ' (đóng băng)' : ''}`);
     };
@@ -147,13 +155,21 @@ Games.pikachu = {
       return false;
     }
     function tap(i) {
-      if (over || !g[i]) return;
+      if (over || lock || !g[i]) return;
       if (sel === null || sel === i) { sel = sel === i ? null : i; return draw(); }
       if (g[sel] === g[i] && linked(sel, i)) {
-        g[sel] = g[i] = null; sel = null; pairs++;
-        if (pairs % 3 === 0) items[Math.random() < .5 ? 'freeze' : 'shuffle']++;
-        if (pairs === 24) { over = true; return api.finish(480 + time * 5, true); }
-      } else sel = i;
+        const a = sel; sel = null; lock = true;
+        [a, i].forEach((k) => btns[k].classList.add('vanish'));
+        setTimeout(() => {
+          g[a] = g[i] = null; lock = false; pairs++;
+          if (pairs % 3 === 0) items[Math.random() < .5 ? 'freeze' : 'shuffle']++;
+          if (pairs === 24) { over = true; return api.finish(480 + time * 5, true); }
+          draw();
+        }, 280);
+        return draw();
+      }
+      if (g[sel] === g[i]) { [sel, i].forEach((k) => { btns[k].classList.add('wrong'); setTimeout(() => btns[k].classList.remove('wrong'), 400); }); sel = i; }
+      else sel = i;
       draw();
     }
     el.querySelector('#fz').onclick = () => { if (items.freeze > 0 && !over) { items.freeze--; frozen = 5; draw(); } };
@@ -178,26 +194,27 @@ Games.oanquan = {
     let sel = null, busy = false, over = false;
     el.innerHTML = '<div class="oq"></div><div id="dir" style="margin-top:.6rem;min-height:2.4rem"></div>';
     const bd = el.querySelector('.oq'), dirEl = el.querySelector('#dir');
-    function sim(cs, i, dir) {
-      cs = cs.map((c) => ({ ...c })); let gain = 0, pos = i, hand = cs[i].d; cs[i].d = 0;
+    function sim(cs, i, dir, rec) {
+      cs = cs.map((c) => ({ ...c })); const snap = (hi, cp = -1) => rec && rec.push({ cs: cs.map((c) => ({ ...c })), hi, cp });
+      let gain = 0, pos = i, hand = cs[i].d; cs[i].d = 0; snap(i);
       for (let guard = 0; guard < 100; guard++) {
-        while (hand > 0) { pos = mod(pos + dir); cs[pos].d++; hand--; }
+        while (hand > 0) { pos = mod(pos + dir); cs[pos].d++; hand--; snap(pos); }
         let nx = mod(pos + dir);
         if (cs[nx].q) break;
-        if (cs[nx].d > 0) { pos = nx; hand = cs[nx].d; cs[nx].d = 0; continue; }
+        if (cs[nx].d > 0) { pos = nx; hand = cs[nx].d; cs[nx].d = 0; snap(nx); continue; }
         let cap = mod(nx + dir);
         while (!cs[nx].d && !cs[nx].q && (cs[cap].d || cs[cap].q)) {
           let v = cs[cap].d + (cs[cap].q ? 10 : 0); if (GOLD.includes(cap)) v *= 2;
-          gain += v; cs[cap] = { d: 0, q: 0 }; nx = mod(cap + dir); cap = mod(nx + dir);
+          gain += v; cs[cap] = { d: 0, q: 0 }; snap(cap, cap); nx = mod(cap + dir); cap = mod(nx + dir);
         }
         break;
       }
       return { cs, gain };
     }
-    function render() {
+    function render(st = cells, hi = -1, cp = -1) {
       bd.innerHTML = '';
-      cells.forEach((c, i) => {
-        const b = document.createElement('button'); b.className = 'cell' + (sel === i ? ' open' : '');
+      st.forEach((c, i) => {
+        const b = document.createElement('button'); b.className = 'cell' + (sel === i ? ' open' : '') + (i === hi ? ' hi' : '') + (i === cp ? ' cap' : '');
         b.textContent = (GOLD.includes(i) ? '⭐' : '') + (c.q ? '🐘' : '') + c.d;
         if (i === 0) b.style.cssText = 'grid-column:1;grid-row:1/3';
         else if (i === 6) b.style.cssText = 'grid-column:7;grid-row:1/3';
@@ -218,12 +235,14 @@ Games.oanquan = {
       over = true; own(0).forEach((i) => sc[0] += cells[i].d); own(1).forEach((i) => sc[1] += cells[i].d);
       render(); api.finish(sc[0] * 10, sc[0] > sc[1]);
     }
-    function play(w, i, dir) {
-      const r = sim(cells, i, dir); cells = r.cs; sc[w] += r.gain; sel = null; dirEl.innerHTML = '';
+    async function play(w, i, dir) {
+      const rec = [], r = sim(cells, i, dir, rec); sel = null; dirEl.innerHTML = ''; busy = true;
+      for (const f of rec) { if (over) return; render(f.cs, f.hi, f.cp); await new Promise((ok) => setTimeout(ok, f.cp >= 0 ? 480 : 240)); }
+      cells = r.cs; sc[w] += r.gain;
       if (!cells[0].q && !cells[6].q) return end();
       const nxt = 1 - w; if (!refill(nxt)) return end();
       busy = w === 0; render();
-      if (w === 0) setTimeout(ai, 700);
+      if (w === 0) setTimeout(ai, 500);
     }
     function ai() {
       if (over) return;
@@ -290,7 +309,7 @@ Games.mario = {
       if (p.x > FLAG) { stop(); return api.finish(score + lives * 50 + 200, true); }
       const cam = Math.max(0, Math.min(p.x - VW / 2, C * T - VW));
       c.fillStyle = '#bfe6ff'; c.fillRect(0, 0, VW, VH);
-      for (let y = 0; y < R; y++) for (let x = (cam / T | 0); x < (cam + VW) / T + 1; x++) if (map[y]?.[x] === '#') { c.fillStyle = y > 9 ? '#c98f5a' : '#7fe0c3'; c.fillRect(x * T - cam, y * T, T, T); }
+      for (let y = 0; y < R; y++) for (let x = (cam / T | 0); x < (cam + VW) / T + 1; x++) if (map[y]?.[x] === '#') { c.fillStyle = y > 9 ? '#c98f5a' : '#7fe0c3'; c.fillRect(x * T - cam, y * T, T, T); c.fillStyle = '#fff6'; c.fillRect(x * T - cam, y * T, T, 3); c.fillStyle = '#0002'; c.fillRect(x * T - cam, y * T + T - 3, T, 3); }
       c.font = '16px serif'; c.textAlign = 'left';
       coins.forEach((q) => c.fillText('🪙', q.x - cam, q.y + 14));
       if (shroom.on) c.fillText('🍄', shroom.x - cam, shroom.y + 14);
@@ -401,7 +420,7 @@ Games.mario = {
       function play(g, magicOn) {
         const { W, H } = G[g];
         let b = (g === 'chess' ? CH : XQ).map((r) => r.split('').map((c) => c === '.' ? '' : c));
-        let sel = null, sm = [], busy = false, over = false, n = 0, extra = 0, trans = 0;
+        let last = null, sel = null, sm = [], busy = false, over = false, n = 0, extra = 0, trans = 0;
         const mg = { extra: magicOn, trans: magicOn };
         el.innerHTML = `<div id="tb" style="margin-bottom:.5rem"></div><div class="chb ${g}" style="grid-template-columns:repeat(${W},1fr)"></div>`;
         const bd = el.querySelector('.chb'), tb = el.querySelector('#tb'), name = (ch) => g === 'chess' ? GL[ch] : GL['x' + ch];
@@ -409,7 +428,7 @@ Games.mario = {
           bd.innerHTML = '';
           for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
             const ch = b[y][x], bt = document.createElement('button');
-            bt.className = 'sq ' + ((x + y) % 2 ? 'dk' : 'lt') + (g === 'xq' && y === 4 ? ' rv' : '') + (sel && sel[0] === x && sel[1] === y ? ' sel' : '') + (sm.some((m) => m[2] === x && m[3] === y) ? ' tg' : '');
+            bt.className = 'sq ' + ((x + y) % 2 ? 'dk' : 'lt') + (g === 'xq' && y === 4 ? ' rv' : '') + (sel && sel[0] === x && sel[1] === y ? ' sel' : '') + (sm.some((m) => m[2] === x && m[3] === y) ? ' tg' : '') + (last && last[2] === x && last[3] === y ? ' drop' : '') + (last && ((last[0] === x && last[1] === y) || (last[2] === x && last[3] === y)) ? ' lm' : '');
             bt.textContent = ch ? name(ch) : '';
             if (ch && g === 'xq') bt.style.color = ch === ch.toUpperCase() ? '#d62a4a' : '#222';
             bt.onclick = () => tap(x, y); bd.append(bt);
@@ -433,15 +452,15 @@ Games.mario = {
           draw();
         }
         function move(m) {
-          b = apply(b, m, g); sel = null; sm = []; n++;
+          b = apply(b, m, g); last = m; sel = null; sm = []; n++;
           if (noMoves(1)) return;
           if (extra) { extra = 0; mg.extra = 0; draw(); noMoves(0); return; }
-          busy = true; draw(); setTimeout(bot, 60);
+          busy = true; draw(); setTimeout(bot, 600);
         }
         function bot() {
           if (dead || over) return;
           const m = botPick(b, g); busy = false;
-          if (m) b = apply(b, m, g);
+          if (m) { b = apply(b, m, g); last = m; }
           if (noMoves(0)) return;
           draw();
         }

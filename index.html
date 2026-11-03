@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Hub Dễ Thương</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="loading"><div class="mascot">🐣</div><div class="bar"><i id="prog"></i></div><div>Đang đánh thức bé gà…</div></div>
+
+<section id="auth" class="glass hidden">
+  <h1>🎮 Game Hub</h1>
+  <p>Tạo tài khoản để vào chơi nhé!</p>
+  <input id="u" placeholder="Tên đăng nhập (a-z, 0-9, _)" autocomplete="username">
+  <input id="p" type="password" placeholder="Mật khẩu (từ 6 ký tự)" autocomplete="current-password">
+  <p id="authMsg" role="alert"></p>
+  <button class="btn" id="login">Đăng nhập</button>
+  <button class="btn alt" id="signup">Đăng ký</button>
+</section>
+
+<div id="app" class="hidden">
+  <header class="glass">
+    <strong>🎮 Game Hub</strong>
+    <nav role="tablist">
+      <button class="tab" data-v="hub" aria-selected="true">Trò chơi</button>
+      <button class="tab" data-v="rank" aria-selected="false">Xếp hạng</button>
+      <button class="tab" data-v="quest" aria-selected="false">Nhiệm vụ</button>
+      <button class="tab" data-v="pets" aria-selected="false">Thú cưng</button>
+    </nav>
+    <span><span class="pill">🪙 <b id="coins">0</b></span> <span id="me"></span> <button class="btn alt" id="logout">Thoát</button></span>
+  </header>
+  <main id="view"></main>
+</div>
+
+<div id="modal" class="hidden"><div class="box glass" id="box"></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="js/config.js"></script>
+<script src="js/games.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

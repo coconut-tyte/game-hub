@@ -94,11 +94,15 @@ function hub(){
     `<div class="card glass" style="--i:${n}" data-g="${esc(g.id)}" tabindex="0"><div class="e">${g.emoji}</div><h3>${esc(g.name)}</h3><small>${Games[g.id] ? 'Chơi ngay' : 'Sắp có'}</small></div>`).join('') + '</div>';
   document.querySelectorAll('.card').forEach(c => { tilt(c); c.onclick = () => openGame(c.dataset.g); });
 }
-async function rank(sel = games[0].id){
-  const { data } = await sb.from('scores').select('score, won, profiles(username)').eq('game_id', sel).order('score', { ascending:false }).limit(10);
-  $('#view').innerHTML = `<div class="glass" style="padding:1rem"><select id="gsel" class="pill">${games.map(g => `<option value="${esc(g.id)}" ${g.id===sel?'selected':''}>${g.emoji} ${esc(g.name)}</option>`).join('')}</select>` +
-    (data.length ? data.map((r,i) => `<div class="row glass"><span>#${i+1} ${esc(r.profiles.username)}</span><b>${r.score}</b></div>`).join('') : '<p>Chưa có ai ghi điểm. Hãy là người đầu tiên!</p>') + '</div>';
-  $('#gsel').onchange = (e) => rank(e.target.value);
+async function rank(sel = games[0].id, mode = 'best'){
+  const { data } = await sb.rpc('leaderboard', { p_game: sel });
+  const rows = [...(data || [])].sort((x, y) => mode === 'wins' ? y.wins - x.wins || y.best - x.best : y.best - x.best).slice(0, 10);
+  const medal = ['🥇', '🥈', '🥉'];
+  $('#view').innerHTML = `<div class="glass" style="padding:1rem"><div class="rk"><select id="gsel">${games.map(g => `<option value="${esc(g.id)}" ${g.id === sel ? 'selected' : ''}>${g.emoji} ${esc(g.name)}</option>`).join('')}</select>
+    <button class="tab" data-m="best" aria-selected="${mode === 'best'}">🏅 Điểm cao</button><button class="tab" data-m="wins" aria-selected="${mode === 'wins'}">🏆 Thắng nhiều</button></div>` +
+    (rows.length ? rows.map((r, i) => `<div class="row glass ${r.username === me.username ? 'me' : ''}"><span>${medal[i] || '#' + (i + 1)} ${esc(r.username)}${r.username === me.username ? ' ⭐' : ''}</span><span><b>${mode === 'best' ? r.best : r.wins + ' thắng'}</b> <small>${mode === 'best' ? r.wins + ' thắng' : 'cao nhất ' + r.best} · ${r.plays} ván</small></span></div>`).join('') : '<p>Chưa có ai ghi điểm. Hãy là người đầu tiên!</p>') + '</div>';
+  $('#gsel').onchange = (e) => rank(e.target.value, mode);
+  document.querySelectorAll('[data-m]').forEach(b => b.onclick = () => rank(sel, b.dataset.m));
 }
 async function quest(){
   const [{ data:qs }, { data:uq }] = await Promise.all([sb.from('daily_quests').select('*').order('id'), sb.from('user_quests').select('*').eq('day', new Date().toISOString().slice(0,10))]);
@@ -175,28 +179,34 @@ modal.addEventListener('pointerdown', (e) => { if (e.target === modal) closeGame
 addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.classList.contains('show')) closeGame(); });
 
 function openGame(id){
-  const g = games.find(x => x.id === id), G = Games[id];
+  let lv = 0; const g = games.find(x => x.id === id), G = Games[id];
   if (!G) return openModal(`<h2>${g.emoji} ${esc(g.name)}</h2><p>Game này đang được xây dựng. Quay lại sau nhé!</p>`);
   openModal(`<h2>${g.emoji} ${esc(g.name)}</h2><details id="gd" open><summary>📖 Hướng dẫn tân thủ</summary><p style="text-align:left">${esc(G.guide)}</p></details>
+    ${G.levels ? `<div class="lvl">${G.levels.map((l, k) => `<button class="tab" data-l="${k}" aria-selected="${k === 0}">${l.name}</button>`).join("")}</div>` : ""}
     <button class="btn" id="go">▶ Bắt đầu</button><p id="hud"></p><div id="arena"></div>`);
+  document.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { lv = +b.dataset.l; document.querySelectorAll('[data-l]').forEach(x => x.setAttribute('aria-selected', x === b)); });
   $('#go').onclick = async () => {
-    $('#go').classList.add('hidden'); $('#gd').open = false;
+    const mult = G.levels?.[lv]?.mult ?? 1;
+    document.querySelectorAll('.lvl').forEach(x => x.classList.add('hidden'));
+    $('#go').classList.add('hidden'); $('#gd').open = false; $('#arena').style.minHeight = '260px';
     for (const n of ['3', '2', '1', 'Go!']) {
-      const d = document.createElement('div'); d.className = 'cd'; d.textContent = n; $('#box').append(d);
+      const d = document.createElement('div'); d.className = 'cd'; d.textContent = n; document.body.append(d);
       await sleep(650); d.remove(); if (!modal.classList.contains('show')) return;
     }
-    stopGame = G.start($('#arena'), {
+    $('#arena').style.minHeight = '';
+    const apiObj = {
       perks,
       setHud: (t) => { const h = $('#hud'); if (h) h.textContent = t; },
       finish: async (score, won) => {
-        stopGame?.(); stopGame = null;
+        stopGame?.(); stopGame = null; score = Math.round(score * mult);
         const { data: earned } = await sb.rpc('submit_score', { p_game: id, p_score: score, p_won: won });
         await refreshMe();
         if (won) confetti(50);
         setBox(`<h2>${won ? 'Chiến thắng! 🎉' : 'Hết lượt! 💫'}</h2><p style="font-size:1.3rem">Điểm: <b>${score}</b></p><p>Nhận 🪙 <b>${earned ?? 0}</b></p><button class="btn" id="again">Chơi lại</button>`);
         $('#again').onclick = () => openGame(id);
       }
-    });
+    };
+    stopGame = G.start($('#arena'), apiObj, lv);
   };
 }
 

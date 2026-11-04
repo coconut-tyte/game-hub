@@ -23,11 +23,13 @@ async function boot(){
   const ready = () => $('#loader').classList.add('gone');
   try {
     if (typeof Valley === 'undefined' || typeof THREE === 'undefined') throw new Error('thiếu three.js hoặc valley.js');
-    valley = new Valley($('#valley'), ready, () => $('#ui').classList.add('on'));
+    valley = new Valley($('#valley'), ready, () => { $('#ui').classList.add('on'); $('#boot').classList.add('hide'); },
+      (p) => { const pc = Math.round(p * 100); $('#bootbar').style.width = pc + '%'; $('#bootpct').textContent = 'Đang đánh thức thung lũng… ' + pc + '%'; });
+    $('#boot').onclick = () => valley.skipIntro();
     valley.setMode('hero');
-  } catch (e) { console.warn('Không tải được thung lũng 3D', e); ready(); $('#ui').classList.add('on'); }
+  } catch (e) { console.warn('Không tải được thung lũng 3D', e); ready(); $('#ui').classList.add('on'); $('#boot').classList.add('hide'); }
   audioStore()?.initAudio();
-  setTimeout(() => { ready(); $('#ui').classList.add('on'); }, 6000);
+  setTimeout(() => { ready(); $('#ui').classList.add('on'); $('#boot').classList.add('hide'); }, 10000);
   $('#sound').onclick = () => { const s = audioStore(); if (!s || !s.isInitialized) return; const muted = s.toggleMute(); $('#sound').setAttribute('aria-pressed', String(!muted)); };
   const arrow = $('#heroGo');
   arrow.addEventListener('pointerenter', () => valley?.startHoverTransition());

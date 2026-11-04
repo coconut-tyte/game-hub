@@ -101,8 +101,12 @@ class Valley {
   stopHoverTransition() { this.hover = false; window.GE?.audio.setMuffle(false); }
   loop(now) {
     requestAnimationFrame(this.loop);
+    try { this.step(now); }
+    catch (e) { if (!this.err) { this.err = e; console.error('Valley lỗi:', e); this.onLoaded && this.onLoaded(); this.onIntroDone && this.onIntroDone(); } }
+  }
+  step(now) {
     if (document.hidden) { this.last = now; return; }
-    const dt = Math.min(.05, (now - this.last) / 1000); this.last = now; if (!dt) return;
+    const dt = Math.min(.05, (now - this.last) / 1000); this.last = now; if (!(dt > 0)) return;
     const k = (s) => 1 - Math.exp(-dt * s), u = this.u;
     this.ease += ((this.hover ? 1 : 0) - this.ease) * k(this.hover ? 2.2 : 1.6);
     this.disp += ((this.hover ? 1 : 0) - this.disp) * k(1.8);

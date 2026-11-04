@@ -8,7 +8,7 @@ const PERK = { coin_bonus:v=>`+${v}% xu nhận được`, extra_life:v=>`+${v} m
 
 // ---------- Hero: thung lũng hoa 3D ----------
 let hasSession = false, pendingTab = 'hub', valley = null;
-const audioStore = () => GE.audio;
+const audioStore = () => window.GE && window.GE.audio;
 function show(id){
   $('#auth').classList.toggle('hidden', id !== 'auth'); $('#app').classList.toggle('hidden', id !== 'app');
   $('#ui').classList.toggle('off', id !== 'hero'); valley?.setMode(id === 'hero' ? 'hero' : 'bg');
@@ -22,11 +22,13 @@ async function boot(){
   show('hero');
   const ready = () => $('#loader').classList.add('gone');
   try {
+    if (typeof Valley === 'undefined' || typeof THREE === 'undefined') throw new Error('thiếu three.js hoặc valley.js');
     valley = new Valley($('#valley'), ready, () => $('#ui').classList.add('on'));
     valley.setMode('hero');
   } catch (e) { console.warn('Không tải được thung lũng 3D', e); ready(); $('#ui').classList.add('on'); }
-  audioStore().initAudio();
-  $('#sound').onclick = () => { const s = audioStore(); if (!s.isInitialized) return; const muted = s.toggleMute(); $('#sound').setAttribute('aria-pressed', String(!muted)); };
+  audioStore()?.initAudio();
+  setTimeout(() => { ready(); $('#ui').classList.add('on'); }, 6000);
+  $('#sound').onclick = () => { const s = audioStore(); if (!s || !s.isInitialized) return; const muted = s.toggleMute(); $('#sound').setAttribute('aria-pressed', String(!muted)); };
   const arrow = $('#heroGo');
   arrow.addEventListener('pointerenter', () => valley?.startHoverTransition());
   arrow.addEventListener('pointerleave', () => valley?.stopHoverTransition());

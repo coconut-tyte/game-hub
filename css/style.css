@@ -19,8 +19,8 @@ input:focus-visible,.btn:focus-visible,.tab:focus-visible{outline:3px solid var(
 @keyframes bob{50%{transform:translateY(-12px) rotate(6deg)}}
 #auth{max-width:380px;margin:12vh auto;padding:2rem;text-align:center}
 #auth h1{margin:0 0 .5rem;font-size:2.2rem}
-header{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;justify-content:space-between;margin:1rem auto;max-width:1000px;padding:.7rem 1.2rem}
-nav{display:flex;gap:.4rem;flex-wrap:wrap}
+#app header{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;justify-content:space-between;margin:1rem auto;max-width:1000px;padding:.7rem 1.2rem}
+#app nav{display:flex;gap:.4rem;flex-wrap:wrap}
 .tab{border:0;background:transparent;font:inherit;font-weight:700;padding:.4rem 1rem;border-radius:99px;cursor:pointer;color:var(--ink)}
 .tab[aria-selected=true]{background:#fff;box-shadow:0 2px 8px #0001}
 main{max-width:1000px;margin:0 auto;padding:0 1rem 3rem}

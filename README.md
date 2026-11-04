@@ -55,3 +55,9 @@ Thú có `coin_bonus` tăng xu nhận được (tính ở server). Các nội t�
 - Sử thi trở lên chắc chắn sau tối đa 10 lượt; Huyền thoại trở lên chắc chắn sau tối đa 50 lượt (đếm riêng, tự reset khi trúng).
 - Trùng thú đã có sẽ được hoàn 30 xu.
 - Logic nằm trong hàm `gacha_roll` ở Supabase (đã được áp dụng vào database).
+
+## Giao diện thung lũng hoa 3D
+- `js/valley.js`: thung lũng hoa về đêm tự dựng bằng three.js r154 (hoa/lá/cỏ/đom đóm dạng point sprite, camera bay dọc đường cong, cuộn chuột/vuốt để di chuyển, chuột đẩy các điểm sáng, rê vào nút mũi tên để hoa tan thành hạt).
+- `js/audio.js`: nhạc nền tự tổng hợp bằng WebAudio, mặc định tắt tiếng; rê vào nút mũi tên sẽ làm tiếng bị nghẹn.
+- `css/valley-theme.css`: giao diện đêm, chữ kem, tiêu đề Antonio.
+- Cần mạng để tải three.js từ jsDelivr; nếu không tải được, trang vẫn chạy với nền đen.

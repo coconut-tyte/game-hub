@@ -3,13 +3,32 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Game Hub Dễ Thương</title>
+<title>Game Hub</title>
+<meta name="description" content="Game Hub: thu thập thú cưng, chinh phục bảng xếp hạng và dạo qua thung lũng hoa về đêm.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Antonio:wght@400&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/valley-theme.css">
 </head>
 <body>
-<div id="loading"><div class="mascot">🐣</div><div class="bar"><i id="prog"></i></div><div>Đang đánh thức bé gà…</div></div>
+<div id="valley" aria-hidden="true"><div class="js-canvas-container"></div></div>
+<div class="vig"></div>
+
+<div class="ui" id="ui">
+  <header class="hhead">
+    <a class="logo" href="#" aria-label="Game Hub">Game Hub</a>
+    <nav aria-label="Chính"><a href="#" data-launch="hub">Trò chơi</a><a href="#" data-launch="rank">Xếp hạng</a><a href="#" data-launch="quest">Nhiệm vụ</a><a class="cta" href="#" data-launch="hub">Chơi ngay</a></nav>
+  </header>
+  <section class="hero">
+    <h1>Chơi là nở hoa.</h1>
+    <p class="cap">Thu thập thú cưng, chinh phục bảng xếp hạng.<br>Dạo qua thung lũng hoa về đêm.</p>
+    <a class="go" href="#" id="heroGo" aria-label="Vào Game Hub"><svg viewBox="0 0 24 24"><path d="M4 12h16M14 6l6 6-6 6"/></svg></a>
+  </section>
+  <div class="corner"><span>Cuộn để dạo chơi</span><i></i>
+    <button class="sound" id="sound" aria-pressed="false" aria-label="Âm thanh nền"><svg viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18V6L7.5 9.5Z"/><path class="w" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/><path class="x" d="m16 10 4 4m0-4-4 4"/></svg></button>
+  </div>
+</div>
 
 <section id="auth" class="glass hidden">
   <h1>🎮 Game Hub</h1>
@@ -23,7 +42,7 @@
 
 <div id="app" class="hidden">
   <header class="glass">
-    <strong>🎮 Game Hub</strong>
+    <strong id="home" title="Về trang chủ" style="cursor:pointer">🎮 Game Hub</strong>
     <nav role="tablist">
       <button class="tab" data-v="hub" aria-selected="true">Trò chơi</button>
       <button class="tab" data-v="rank" aria-selected="false">Xếp hạng</button>
@@ -36,7 +55,11 @@
 </div>
 
 <div id="modal" class="hidden"><div class="box glass" id="box"></div></div>
+<div class="loader" id="loader"><span></span></div>
 
+<script src="https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.min.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/valley.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="js/config.js"></script>
 <script src="js/games.js"></script>

@@ -6,17 +6,34 @@ const GUIDE = { fps:'Bấm vào mục tiêu xuất hiện ngẫu nhiên trong 15
 let me = null, games = [], perks = {}, cur = 'hub';
 const PERK = { coin_bonus:v=>`+${v}% xu nhận được`, extra_life:v=>`+${v} mạng/khiên khởi đầu`, score_boost:v=>`+${v}% điểm Bắn Súng`, bonus_time:v=>`+${v}s thời gian Pikachu` };
 
-// ---------- Loading ----------
-function progress(p){ $('#prog').style.width = p + '%'; }
-async function boot(){
-  progress(30);
-  const { data:{ session } } = await sb.auth.getSession();
-  progress(70);
-  if (session) await enter(); else show('auth');
-  progress(100);
-  setTimeout(() => { $('#loading').style.opacity = 0; setTimeout(() => $('#loading').remove(), 400); }, 250);
+// ---------- Hero: thung lũng hoa 3D ----------
+let hasSession = false, pendingTab = 'hub', valley = null;
+const audioStore = () => GE.audio;
+function show(id){
+  $('#auth').classList.toggle('hidden', id !== 'auth'); $('#app').classList.toggle('hidden', id !== 'app');
+  $('#ui').classList.toggle('off', id !== 'hero'); valley?.setMode(id === 'hero' ? 'hero' : 'bg');
 }
-function show(id){ $('#auth').classList.toggle('hidden', id !== 'auth'); $('#app').classList.toggle('hidden', id !== 'app'); }
+async function launch(tab = 'hub'){
+  pendingTab = tab; valley?.stopHoverTransition();
+  if (hasSession) await enter(); else show('auth');
+}
+async function boot(){
+  const { data:{ session } } = await sb.auth.getSession(); hasSession = !!session;
+  show('hero');
+  const ready = () => $('#loader').classList.add('gone');
+  try {
+    valley = new Valley($('#valley'), ready, () => $('#ui').classList.add('on'));
+    valley.setMode('hero');
+  } catch (e) { console.warn('Không tải được thung lũng 3D', e); ready(); $('#ui').classList.add('on'); }
+  audioStore().initAudio();
+  $('#sound').onclick = () => { const s = audioStore(); if (!s.isInitialized) return; const muted = s.toggleMute(); $('#sound').setAttribute('aria-pressed', String(!muted)); };
+  const arrow = $('#heroGo');
+  arrow.addEventListener('pointerenter', () => valley?.startHoverTransition());
+  arrow.addEventListener('pointerleave', () => valley?.stopHoverTransition());
+  arrow.onclick = (e) => { e.preventDefault(); launch('hub'); };
+  document.querySelectorAll('[data-launch]').forEach(a => a.onclick = (e) => { e.preventDefault(); launch(a.dataset.launch); });
+  $('#home').onclick = () => show('hero');
+}
 
 // ---------- Auth (tên đăng nhập -> email ảo) ----------
 const mail = (u) => `${u.toLowerCase()}@gamehub.app`;
@@ -56,7 +73,7 @@ $('#logout').onclick = async () => { await sb.auth.signOut(); location.reload();
 async function enter(){
   await refreshMe();
   ({ data: games } = await sb.from('games').select('*'));
-  show('app'); go('hub');
+  hasSession = true; show('app'); go(pendingTab); pendingTab = 'hub';
 }
 async function refreshMe(){
   const { data:{ user } } = await sb.auth.getUser();

@@ -61,3 +61,6 @@ Thú có `coin_bonus` tăng xu nhận được (tính ở server). Các nội t�
 - `js/audio.js`: nhạc nền tự tổng hợp bằng WebAudio, mặc định tắt tiếng; rê vào nút mũi tên sẽ làm tiếng bị nghẹn.
 - `css/valley-theme.css`: giao diện đêm, chữ kem, tiêu đề Antonio.
 - Cần mạng để tải three.js từ jsDelivr; nếu không tải được, trang vẫn chạy với nền đen.
+
+## Game mới: Khủng Long Chạy 🦖
+Nhảy (Space/↑/chạm) và cúi (↓) để né xương rồng và chim; 3 màn (mục tiêu 300/500/800 điểm), đổi ngày/đêm theo điểm. Nội tại thú cưng +1 mạng cũng áp dụng. Game đã được thêm vào bảng `games` trên Supabase (id `dino`).

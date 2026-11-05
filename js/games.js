@@ -658,11 +658,12 @@ Games.dino = {
       c.font = '700 16px monospace'; c.textAlign = 'right'; c.fillStyle = flash && Math.floor(flash / 4) % 2 ? '#ff4f9a' : nightT > .5 ? '#f5efe2' : '#3b2f4a'; c.fillText(String(Math.floor(score)).padStart(5, '0'), W - 12, 22);
       const hud = `Điểm: ${Math.floor(score)} · ❤️ ${lives} · Mục tiêu ${GOAL}`; if (hud !== lastHud) { lastHud = hud; api.setHud(hud); }
     }
-    function loop(now) {
+        function loop(now) {
       raf = requestAnimationFrame(loop); if (ended) return;
       if (last == null) last = now; acc += Math.min(100, now - last); last = now;
       let n = 0; while (acc >= STEP && n < 5) { update(); acc -= STEP; n++; } if (n === 5) acc = 0;
       render();
+    }
     raf = requestAnimationFrame(loop);
     return stop;
   }

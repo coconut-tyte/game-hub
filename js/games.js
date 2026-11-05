@@ -564,6 +564,7 @@ Games.pacman = {
 };
 
 
+<<<<<<< HEAD
 // ---- Khủng Long Chạy (tối ưu: bước thời gian cố định, sprite dựng sẵn, nét theo DPR, nhảy cao/thấp, đệm phím) ----
 Games.dino = {
   guide: 'Space / ↑ / chạm để nhảy (giữ lâu nhảy cao hơn), giữ ↓ để cúi. Đạt 300/500/800 điểm để thắng.',
@@ -663,6 +664,88 @@ Games.dino = {
       if (last == null) last = now; acc += Math.min(100, now - last); last = now;
       let n = 0; while (acc >= STEP && n < 5) { update(); acc -= STEP; n++; } if (n === 5) acc = 0;
       render();
+=======
+// ---- Khủng Long Chạy ----
+Games.dino = {
+  guide: 'Chạm màn hình / Space / ↑ để nhảy, giữ ↓ để cúi (hoặc dùng 2 nút bên dưới). Nhảy qua 🌵 xương rồng và chim bay thấp, cúi xuống để chui qua chim bay ngang đầu, chim bay cao thì cứ chạy qua. Càng chạy xa càng nhanh, cứ ~700 điểm trời lại đổi ngày/đêm. Chạm vật cản là mất mạng! Đạt điểm mục tiêu (300/500/800 tùy màn) để thắng.',
+  start(el, api, lv = 0) {
+    const W = 480, H = 200, GY = 160, DX = 50;
+    el.innerHTML = `<canvas width="${W}" height="${H}"></canvas><div class="pad"><button class="btn alt" data-k="j">⤒ Nhảy</button><button class="btn alt" data-k="d">⤓ Cúi</button></div>`;
+    const cv = el.firstChild, c = cv.getContext('2d'), k = { j: 0, d: 0 };
+    const V0 = [6, 6.8, 7.6][lv], VMAX = [12, 13.5, 15][lv], GOAL = [300, 500, 800][lv], BIRD = [.18, .28, .38][lv];
+    let lives = 1 + (api.perks.extra_life || 0), score = 0, v = V0, f = 0, raf, ended = false, inv = 0, next = 300, nightT = 0, last = null, obs = [];
+    const d = { y: GY - 44, vy: 0, g: 1, duck: 0 };
+    const clouds = Array.from({ length: 4 }, (_, i) => ({ x: i * 130 + 40, y: 18 + Math.random() * 50 }));
+    const stars = Array.from({ length: 36 }, () => ({ x: Math.random() * W, y: Math.random() * 100, r: .6 + Math.random() * 1.3 }));
+    el.__dbg = () => ({ obs, d, v, score });
+    const keyMap = { Space: 'j', ArrowUp: 'j', KeyW: 'j', ArrowDown: 'd', KeyS: 'd' };
+    const kd = (e) => { const m = keyMap[e.code]; if (m) { e.preventDefault(); k[m] = 1; } };
+    const ku = (e) => { const m = keyMap[e.code]; if (m) k[m] = 0; };
+    addEventListener('keydown', kd); addEventListener('keyup', ku);
+    cv.onpointerdown = () => { k.j = 1; setTimeout(() => k.j = 0, 120); };
+    el.querySelectorAll('[data-k]').forEach((b) => { const m = b.dataset.k; b.onpointerdown = () => k[m] = 1; b.onpointerup = b.onpointerleave = b.onpointercancel = () => k[m] = 0; });
+    const stop = () => { cancelAnimationFrame(raf); removeEventListener('keydown', kd); removeEventListener('keyup', ku); };
+    const rr = (x, y, w, h, r, fill) => { c.fillStyle = fill; c.beginPath(); c.roundRect ? c.roundRect(x, y, w, h, r) : c.rect(x, y, w, h); c.fill(); };
+    function spawn() {
+      const r = Math.random();
+      if (score > 120 && r < BIRD) { const lvl = [GY - 30, GY - 58, GY - 100][Math.random() * 3 | 0]; obs.push({ x: W + 20, y: lvl, w: 40, h: 24, kind: 'bird' }); }
+      else { const q = Math.random(); const o = q < .4 ? { w: 18, h: 34, n: 1 } : q < .7 ? { w: 24, h: 50, n: 1 } : { w: 44, h: 34, n: 2 };
+        obs.push({ x: W + 20, y: GY - o.h, w: o.w, h: o.h, n: o.n, kind: 'cactus' }); }
+    }
+    function cactus(x, y, w, h) {
+      rr(x + w * .36, y, w * .28, h, 4, '#2e9e5b'); rr(x, y + h * .35, w * .4, 5, 2, '#2e9e5b'); rr(x, y + h * .2, 5, h * .2 + 5, 2, '#2e9e5b');
+      rr(x + w * .6, y + h * .45, w * .4, 5, 2, '#2e9e5b'); rr(x + w - 5, y + h * .3, 5, h * .2 + 5, 2, '#2e9e5b');
+    }
+    function dino(x, y, duck) {
+      const run = d.g ? Math.floor(f / 5) % 2 : 0, G = '#2fbf8f', DK = '#1a7a5b';
+      if (!duck) {
+        rr(x - 8, y + 20, 18, 9, 4, G); rr(x + 4, y + 14, 26, 24, 8, G); rr(x + 10, y + 22, 14, 14, 6, '#c9f5e3'); rr(x + 16, y, 24, 20, 8, G);
+        c.fillStyle = '#fff'; c.beginPath(); c.arc(x + 33, y + 8, 3.6, 0, 7); c.fill(); c.fillStyle = '#222'; c.beginPath(); c.arc(x + 34, y + 8, 1.7, 0, 7); c.fill();
+        rr(x + 30, y + 15, 9, 2, 1, DK); rr(x + 10, y + 36, 7, 8 - (run ? 3 : 0), 2, DK); rr(x + 21, y + 36, 7, 8 - (run ? 0 : 3), 2, DK);
+        c.fillStyle = DK; for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(x + 8 + i * 7, y + 14); c.lineTo(x + 12 + i * 7, y + 7); c.lineTo(x + 16 + i * 7, y + 14); c.fill(); }
+      } else {
+        rr(x - 8, y + 10, 18, 8, 4, G); rr(x, y + 6, 36, 18, 8, G); rr(x + 8, y + 14, 18, 8, 4, '#c9f5e3'); rr(x + 26, y, 18, 14, 6, G);
+        c.fillStyle = '#fff'; c.beginPath(); c.arc(x + 38, y + 5, 3, 0, 7); c.fill(); c.fillStyle = '#222'; c.beginPath(); c.arc(x + 39, y + 5, 1.5, 0, 7); c.fill();
+        rr(x + 8, y + 22, 7, 4 + (run ? 0 : 0), 2, DK); rr(x + 22, y + 22, 7, 4, 2, DK);
+      }
+    }
+    function bird(x, y) {
+      const up = Math.floor(f / 8) % 2; rr(x + 6, y + 8, 28, 12, 6, '#6b4eff'); rr(x + 28, y + 6, 12, 8, 4, '#6b4eff');
+      c.fillStyle = '#ffb703'; c.beginPath(); c.moveTo(x + 39, y + 9); c.lineTo(x + 46, y + 11); c.lineTo(x + 39, y + 13); c.fill();
+      c.fillStyle = '#fff'; c.beginPath(); c.arc(x + 33, y + 9, 2.4, 0, 7); c.fill();
+      c.fillStyle = '#8d77ff'; c.beginPath(); c.moveTo(x + 10, y + 12); c.lineTo(x + 22, up ? y - 6 : y + 26); c.lineTo(x + 26, y + 12); c.fill();
+    }
+    function loop(now) {
+      raf = requestAnimationFrame(loop); if (ended) return;
+      const s = last == null ? 1 : Math.min(2.5, Math.max(.2, (now - last) / 16.67)); last = now; f++;
+      d.duck = k.d && d.g ? 1 : 0;
+      d.vy += (k.d && !d.g ? 1.9 : .6) * s; d.y += d.vy * s;
+      const gy = GY - (d.duck ? 26 : 44); if (d.y >= gy) { d.y = gy; d.vy = 0; d.g = 1; }
+      if (k.j && d.g) { d.vy = -11.2; d.g = 0; }
+      v = Math.min(VMAX, v + .0025 * s); score += v * s * .04; if (inv > 0) inv -= s;
+      next -= v * s; if (next <= 0) { spawn(); next = Math.max(260, v * 38) + Math.random() * v * 22; }
+      obs.forEach((o) => o.x -= v * s); obs = obs.filter((o) => o.x > -60);
+      clouds.forEach((q) => { q.x -= v * s * .2; if (q.x < -50) { q.x = W + 20; q.y = 18 + Math.random() * 50; } });
+      const night = Math.floor(score / 700) % 2; nightT += (night - nightT) * .02 * s;
+      const hb = { x: DX + 4, y: d.y + 4, w: 30, h: (d.duck ? 26 : 44) - 6 };
+      for (const o of obs) {
+        if (hb.x < o.x + o.w - 4 && hb.x + hb.w > o.x + 4 && hb.y < o.y + o.h - 4 && hb.y + hb.h > o.y + 4 && inv <= 0) {
+          lives--; if (lives <= 0) { ended = true; stop(); return api.finish(Math.floor(score), score >= GOAL); }
+          inv = 90; o.x = -100; break;
+        }
+      }
+      const mix = (a, b) => Math.round(a + (b - a) * nightT);
+      c.fillStyle = `rgb(${mix(255, 27)},${mix(248, 20)},${mix(236, 66)})`; c.fillRect(0, 0, W, H);
+      c.globalAlpha = nightT; c.fillStyle = '#fff'; stars.forEach((t) => { c.beginPath(); c.arc(t.x, t.y, t.r, 0, 7); c.fill(); });
+      c.fillStyle = '#f5efe2'; c.beginPath(); c.arc(410, 42, 16, 0, 7); c.fill(); c.globalAlpha = 1 - nightT; c.fillStyle = '#ffd166'; c.beginPath(); c.arc(410, 42, 16, 0, 7); c.fill(); c.globalAlpha = 1;
+      c.fillStyle = `rgba(${mix(255, 120)},${mix(255, 110)},${mix(255, 190)},.85)`; clouds.forEach((q) => { rr(q.x, q.y, 46, 12, 6, c.fillStyle); rr(q.x + 10, q.y - 7, 24, 12, 6, c.fillStyle); });
+      c.fillStyle = `rgb(${mix(217, 42)},${mix(201, 32)},${mix(168, 96)})`; c.fillRect(0, GY, W, H - GY);
+      c.fillStyle = `rgb(${mix(180, 70)},${mix(160, 56)},${mix(120, 130)})`; c.fillRect(0, GY, W, 3);
+      for (let i = 0; i < 14; i++) c.fillRect(((i * 97 - f * v) % (W + 40) + W + 40) % (W + 40) - 20, GY + 12 + (i * 13) % 26, 10 + i % 3 * 6, 2);
+      obs.forEach((o) => { if (o.kind === 'bird') bird(o.x, o.y); else for (let i = 0; i < o.n; i++) cactus(o.x + i * (o.w / o.n + 2), o.y, o.w / o.n, o.h); });
+      if (inv <= 0 || Math.floor(inv / 6) % 2) dino(DX, d.y, d.duck);
+      api.setHud(`Điểm: ${Math.floor(score)} · ❤️ ${lives} · Mục tiêu ${GOAL}`);
+>>>>>>> 1e780d2532a88bdc49bb5e97f56c4129a9ad49d0
     }
     raf = requestAnimationFrame(loop);
     return stop;

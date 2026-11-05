@@ -302,5 +302,5 @@ function openGame(id){
   };
 }
 
-$('#helpBtn').onclick = openHelp;
+const _helpBtn = $('#helpBtn'); if (_helpBtn) _helpBtn.onclick = openHelp;
 boot();
